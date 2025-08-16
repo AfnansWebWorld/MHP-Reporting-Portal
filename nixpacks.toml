@@ -1,0 +1,20 @@
+# Nixpacks configuration for MHP Reporting Portal
+# This file tells Railway how to build the project
+
+[phases.setup]
+nixPkgs = ['nodejs', 'python39']
+
+[phases.install]
+cmds = [
+  'echo "This is a multi-service project. Please deploy backend and frontend separately."',
+  'echo "Backend: Set root directory to /backend"',
+  'echo "Frontend: Set root directory to /frontend"'
+]
+
+[phases.build]
+cmds = [
+  'echo "Please refer to RAILWAY_DEPLOYMENT.md for proper deployment instructions"'
+]
+
+[start]
+cmd = 'echo "This root directory is not meant to be deployed. Deploy backend and frontend as separate services."'

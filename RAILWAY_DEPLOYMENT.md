@@ -21,8 +21,8 @@ railway login
 
 1. Go to [railway.app](https://railway.app)
 2. Click "New Project"
-3. Select "Deploy from GitHub repo"
-4. Choose your `MHP-Reporting-Portal` repository
+3. Select "Empty Project" (we'll add services manually)
+4. Give your project a name like "MHP Reporting Portal"
 
 ### Step 3: Deploy Backend (FastAPI)
 
@@ -35,9 +35,10 @@ railway login
 2. **Deploy Backend Service:**
    - Click "+ New Service"
    - Select "GitHub Repo"
-   - Choose your repository
-   - Set **Root Directory** to: `backend`
-   - Railway will automatically detect the FastAPI app
+   - Choose your `MHP-Reporting-Portal` repository
+   - **IMPORTANT**: Set **Root Directory** to: `backend`
+   - **IMPORTANT**: Set **Service Name** to: `backend` or `api`
+   - Railway will automatically detect the FastAPI app using Nixpacks
 
 3. **Configure Backend Environment Variables:**
    Go to your backend service → Variables tab and add:
@@ -59,8 +60,10 @@ railway login
 1. **Add Frontend Service:**
    - Click "+ New Service"
    - Select "GitHub Repo"
-   - Choose your repository again
-   - Set **Root Directory** to: `frontend`
+   - Choose your `MHP-Reporting-Portal` repository again
+   - **IMPORTANT**: Set **Root Directory** to: `frontend`
+   - **IMPORTANT**: Set **Service Name** to: `frontend` or `web`
+   - Railway will automatically detect the Next.js app using Nixpacks
 
 2. **Configure Frontend Environment Variables:**
    Go to your frontend service → Variables tab and add:
@@ -118,15 +121,22 @@ After deployment, you'll have:
 
 ### Common Issues
 
-1. **Database Connection Issues:**
+1. **Nixpacks Build Failed Error:**
+   - **Problem**: "Nixpacks was unable to generate a build plan for this app"
+   - **Solution**: Make sure you set the **Root Directory** correctly:
+     - Backend service: Root Directory = `backend`
+     - Frontend service: Root Directory = `frontend`
+   - **DO NOT** deploy from the root directory of the repository
+
+2. **Database Connection Issues:**
    - Ensure `DATABASE_URL` is correctly set
    - Check PostgreSQL service is running
 
-2. **CORS Errors:**
+3. **CORS Errors:**
    - Add your Railway frontend URL to CORS origins
    - Redeploy backend after updating CORS
 
-3. **Build Failures:**
+4. **Build Failures:**
    - Check build logs in Railway dashboard
    - Ensure all dependencies are in requirements.txt/package.json
 
