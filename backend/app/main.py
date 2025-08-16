@@ -12,6 +12,8 @@ app = FastAPI(title="MHP Reporting Portal API")
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://*.railway.app",  # Allow all Railway subdomains
+    "https://mhp-reporting-portal.railway.app",  # Your custom Railway domain
 ]
 
 app.add_middleware(
