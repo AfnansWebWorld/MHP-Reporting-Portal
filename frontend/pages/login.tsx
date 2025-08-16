@@ -4,7 +4,7 @@ import Cookies from 'js-cookie'
 import { useRouter } from 'next/router'
 import { api } from '../lib/api'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000'
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://backend-service-production-1daa.up.railway.app'
 
 export default function Login() {
   const [email, setEmail] = useState('')
