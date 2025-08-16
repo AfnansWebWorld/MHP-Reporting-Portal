@@ -106,8 +106,11 @@ export default function Login() {
         </form>
         
         <div className="mt-6 text-center text-sm text-gray-600">
-          <p>Demo Credentials:</p>
-          <p className="font-mono text-xs mt-1">admin@mhp.local / admin123</p>
+          <p className="font-medium mb-2">Demo Credentials:</p>
+          <div className="space-y-1">
+            <p className="font-mono text-xs">admin@mhp.com / admin123</p>
+            <p className="font-mono text-xs">user@mhp.com / user123</p>
+          </div>
         </div>
       </div>
     </div>

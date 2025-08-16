@@ -3,17 +3,29 @@ from . import models
 from .auth import get_password_hash
 
 def seed(db: Session):
-    # Create default admin if none
-    admin = db.query(models.User).filter(models.User.role == models.Role.admin).first()
+    # Create demo admin user
+    admin = db.query(models.User).filter(models.User.email == "admin@mhp.com").first()
     if not admin:
         admin = models.User(
-            email="admin@mhp.local",
-            full_name="Admin",
+            email="admin@mhp.com",
+            full_name="Admin User",
             hashed_password=get_password_hash("admin123"),
             role=models.Role.admin,
         )
         db.add(admin)
-        db.commit()
+    
+    # Create demo regular user
+    user = db.query(models.User).filter(models.User.email == "user@mhp.com").first()
+    if not user:
+        user = models.User(
+            email="user@mhp.com",
+            full_name="Demo User",
+            hashed_password=get_password_hash("user123"),
+            role=models.Role.user,
+        )
+        db.add(user)
+    
+    db.commit()
     # Add some demo clients if none
     if db.query(models.Client).count() == 0:
         clients = [
