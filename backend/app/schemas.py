@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime
 from enum import Enum
 
@@ -18,7 +18,7 @@ class UserCreate(UserBase):
 class UserOut(UserBase):
     id: int
     is_active: bool
-    submissions_count: int | None = 0
+    submissions_count: Optional[int] = 0
 
     class Config:
         from_attributes = True
