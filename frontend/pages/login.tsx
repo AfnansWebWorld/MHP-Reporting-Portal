@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import axios from 'axios'
 import Cookies from 'js-cookie'
 import { useRouter } from 'next/router'
 import { api } from '../lib/api'
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://backend-service-production-1daa.up.railway.app'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -43,7 +40,7 @@ export default function Login() {
       const form = new URLSearchParams()
       form.append('username', email)
       form.append('password', password)
-      const res = await axios.post(`${API_BASE}/auth/login`, form, {
+      const res = await api.post('/auth/login', form, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       })
       Cookies.set('token', res.data.access_token)

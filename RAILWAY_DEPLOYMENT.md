@@ -72,6 +72,8 @@ railway login
    ```
    
    Replace `your-backend-service.railway.app` with your actual backend service URL from Railway.
+   
+   **IMPORTANT**: Make sure the backend URL does NOT have a trailing slash and uses HTTPS.
 
 ### Step 5: Update CORS Settings
 
@@ -132,11 +134,19 @@ After deployment, you'll have:
    - Ensure `DATABASE_URL` is correctly set
    - Check PostgreSQL service is running
 
-3. **CORS Errors:**
+3. **Login Failed Error:**
+   - **Problem**: "Login failed" error on deployed frontend
+   - **Solution**: 
+     - Ensure `NEXT_PUBLIC_API_URL` is set correctly in frontend environment variables
+     - Verify backend URL is accessible (try visiting `https://your-backend.railway.app/` in browser)
+     - Check that backend URL in environment variable does NOT have trailing slash
+     - Ensure frontend URL is added to CORS origins in backend
+
+4. **CORS Errors:**
    - Add your Railway frontend URL to CORS origins
    - Redeploy backend after updating CORS
 
-4. **Build Failures:**
+5. **Build Failures:**
    - Check build logs in Railway dashboard
    - Ensure all dependencies are in requirements.txt/package.json
 
