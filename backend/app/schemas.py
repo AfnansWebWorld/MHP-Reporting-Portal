@@ -34,7 +34,9 @@ class TokenData(BaseModel):
 class ClientBase(BaseModel):
     name: str
     phone: str
+    phone2: Optional[str] = None  # Optional second phone number
     address: str
+    city: str
 
 class ClientCreate(ClientBase):
     pass

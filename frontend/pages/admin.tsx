@@ -38,8 +38,11 @@ export default function Admin() {
   const [editPhone, setEditPhone] = useState('')
   const [editAddress, setEditAddress] = useState('')
 
+
   const router = useRouter()
   // Trigger rebuild
+
+
 
 
 
@@ -82,6 +85,8 @@ export default function Admin() {
     }
     checkAdminAccess()
   }, [router])
+
+
 
   const createUser = async () => {
     if (!email || !name || !password) {
@@ -195,7 +200,7 @@ export default function Admin() {
               <p className="text-gray-600">Manage users and system settings</p>
             </div>
           </div>
-          <div className="mt-4 sm:mt-0">
+          <div className="mt-4 sm:mt-0 flex gap-3">
             <button
               onClick={() => {
                 Cookies.remove('token')
@@ -279,7 +284,9 @@ export default function Admin() {
                 <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">System Users</h2>
+            <div className="flex items-center justify-between flex-1">
+              <h2 className="text-2xl font-bold text-gray-900">System Users</h2>
+            </div>
           </div>
           <div className="divide-y divide-gray-200">
             {users.map(u => (

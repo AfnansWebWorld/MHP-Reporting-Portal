@@ -34,9 +34,9 @@ def seed(db: Session):
     # Add some demo clients if none
     if db.query(models.Client).count() == 0:
         clients = [
-            models.Client(name="Client A", phone="123-456-7890", address="123 Main St", user_id=user.id),
-            models.Client(name="Client B", phone="555-111-2222", address="456 Oak Ave", user_id=user.id),
-            models.Client(name="Admin Client", phone="999-888-7777", address="789 Pine Rd", user_id=admin.id),
+            models.Client(name="Client A", phone="123-456-7890", address="123 Main St", city="New York", user_id=user.id),
+            models.Client(name="Client B", phone="555-111-2222", address="456 Oak Ave", city="Los Angeles", user_id=user.id),
+            models.Client(name="Admin Client", phone="999-888-7777", address="789 Pine Rd", city="Chicago", user_id=admin.id),
         ]
         db.add_all(clients)
         db.commit()

@@ -8,7 +8,9 @@ interface Client {
   id: number
   name: string
   phone: string
+  phone2?: string
   address: string
+  city: string
   user_id: number
   created_at: string
 }
@@ -26,13 +28,17 @@ export default function Clients() {
   const [loading, setLoading] = useState(true)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [phone2, setPhone2] = useState('')
   const [address, setAddress] = useState('')
+  const [city, setCity] = useState('')
   const [message, setMessage] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [editName, setEditName] = useState('')
   const [editPhone, setEditPhone] = useState('')
+  const [editPhone2, setEditPhone2] = useState('')
   const [editAddress, setEditAddress] = useState('')
+  const [editCity, setEditCity] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -70,8 +76,8 @@ export default function Clients() {
   }, [router])
 
   const createClient = async () => {
-    if (!name.trim() || !phone.trim() || !address.trim()) {
-      setMessage('Please fill in all fields')
+    if (!name.trim() || !phone.trim() || !address.trim() || !city.trim()) {
+      setMessage('Please fill in all required fields')
       return
     }
 
@@ -79,13 +85,17 @@ export default function Clients() {
       const response = await api.post('/clients/', {
         name: name.trim(),
         phone: phone.trim(),
-        address: address.trim()
+        phone2: phone2.trim() || null,
+        address: address.trim(),
+        city: city.trim()
       })
       
       setClients([...clients, response.data])
       setName('')
       setPhone('')
+      setPhone2('')
       setAddress('')
+      setCity('')
       setMessage('Client created successfully!')
       setShowForm(false)
       
@@ -100,7 +110,9 @@ export default function Clients() {
     setEditingClient(client)
     setEditName(client.name)
     setEditPhone(client.phone)
+    setEditPhone2(client.phone2 || '')
     setEditAddress(client.address)
+    setEditCity(client.city)
     setShowForm(false)
   }
 
@@ -108,12 +120,14 @@ export default function Clients() {
     setEditingClient(null)
     setEditName('')
     setEditPhone('')
+    setEditPhone2('')
     setEditAddress('')
+    setEditCity('')
   }
 
   const updateClient = async () => {
-    if (!editingClient || !editName.trim() || !editPhone.trim() || !editAddress.trim()) {
-      setMessage('Please fill in all fields')
+    if (!editingClient || !editName.trim() || !editPhone.trim() || !editAddress.trim() || !editCity.trim()) {
+      setMessage('Please fill in all required fields')
       return
     }
 
@@ -121,7 +135,9 @@ export default function Clients() {
       const response = await api.put(`/clients/${editingClient.id}`, {
         name: editName.trim(),
         phone: editPhone.trim(),
-        address: editAddress.trim()
+        phone2: editPhone2.trim() || null,
+        address: editAddress.trim(),
+        city: editCity.trim()
       })
       
       setClients(clients.map(c => c.id === editingClient.id ? response.data : c))
@@ -217,9 +233,9 @@ export default function Clients() {
 
           {showForm && currentUser?.role !== 'admin' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Client Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Client Name *</label>
                   <input
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     placeholder="Enter client name"
@@ -228,7 +244,7 @@ export default function Clients() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
                   <input
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     placeholder="Enter phone number"
@@ -237,12 +253,30 @@ export default function Clients() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number 2 (Optional)</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    placeholder="Enter second phone number"
+                    value={phone2}
+                    onChange={(e) => setPhone2(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
                   <input
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     placeholder="Enter address"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    placeholder="Enter city"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
                   />
                 </div>
               </div>
@@ -303,9 +337,9 @@ export default function Clients() {
             </div>
 
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Client Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Client Name *</label>
                   <input
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                     placeholder="Enter client name"
@@ -314,7 +348,7 @@ export default function Clients() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
                   <input
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                     placeholder="Enter phone number"
@@ -323,12 +357,30 @@ export default function Clients() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number 2 (Optional)</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                    placeholder="Enter second phone number"
+                    value={editPhone2}
+                    onChange={(e) => setEditPhone2(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
                   <input
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                     placeholder="Enter address"
                     value={editAddress}
                     onChange={(e) => setEditAddress(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                    placeholder="Enter city"
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
                   />
                 </div>
               </div>
@@ -371,15 +423,31 @@ export default function Clients() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-gray-900 text-lg">{client.name}</div>
-                    <div className="text-sm text-gray-600 flex items-center mt-1">
-                      <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
-                      </svg>
-                      <span className="mr-4">{client.phone}</span>
-                      <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"></path>
-                      </svg>
-                      <span>{client.address}</span>
+                    <div className="text-sm text-gray-600 space-y-1 mt-1">
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
+                        </svg>
+                        <span className="mr-4">{client.phone}</span>
+                        {client.phone2 && (
+                          <>
+                            <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
+                            </svg>
+                            <span className="mr-4">{client.phone2}</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"></path>
+                        </svg>
+                        <span className="mr-4">{client.address}</span>
+                        <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm3 5a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" clipRule="evenodd"></path>
+                        </svg>
+                        <span>{client.city}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

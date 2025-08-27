@@ -21,6 +21,11 @@ interface GiveawayAssignment {
   }
 }
 
+// Helper function to format currency with commas
+const formatCurrency = (amount: number): string => {
+  return `Rs. ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
 export default function Dashboard() {
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])
@@ -218,7 +223,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm font-medium mb-1">Total Recovery</p>
-                <p className="text-2xl font-bold text-gray-900">Rs. {reports.reduce((sum, r) => sum + (r.payment_amount || 0), 0).toFixed(2)}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(reports.reduce((sum, r) => sum + (r.payment_amount || 0), 0))}</p>
               </div>
               <div className="bg-orange-50 rounded-lg p-3">
                 <svg className="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
@@ -399,7 +404,7 @@ export default function Dashboard() {
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-red-100 text-red-800'
                           }`}>
-                            {r.payment_received ? `Rs. ${(r.payment_amount || 0).toFixed(2)}` : 'Unpaid'}
+                            {r.payment_received ? formatCurrency(r.payment_amount || 0) : 'Unpaid'}
                           </span>
                         </div>
                       </div>

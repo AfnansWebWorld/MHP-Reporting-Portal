@@ -29,7 +29,9 @@ class Client(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, index=True, nullable=False)
     phone = Column(String, nullable=False)
+    phone2 = Column(String, nullable=True)  # Optional second phone number
     address = Column(String, nullable=False)
+    city = Column(String, nullable=False)  # City field
     created_at = Column(DateTime, default=datetime.utcnow)
     reports = relationship("Report", back_populates="client")
     user = relationship("User", back_populates="clients")
