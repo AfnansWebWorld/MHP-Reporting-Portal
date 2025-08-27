@@ -32,6 +32,23 @@ def create_user(user_in: schemas.UserCreate, db: Session = Depends(get_db), admi
     db.refresh(user)
     return user
 
+@router.post("/create-user", response_model=schemas.UserOut)
+def create_user_simple(user_data: dict, db: Session = Depends(get_db), admin=Depends(require_admin)):
+    """Simplified user creation endpoint for admin frontend"""
+    existing = db.query(models.User).filter(models.User.email == user_data["email"]).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user = models.User(
+        email=user_data["email"],
+        full_name=user_data["full_name"],
+        hashed_password=get_password_hash(user_data["password"]),
+        role=models.Role.user  # Default to user role
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
 @router.get("/me", response_model=schemas.UserOut)
 def me(current_user: models.User = Depends(get_current_user)):
     return current_user

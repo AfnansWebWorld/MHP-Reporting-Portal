@@ -13,6 +13,9 @@ def init_database():
     print("Ensuring database exists...")
     ensure_database_exists(DATABASE_URL)
     
+    print("Dropping existing tables...")
+    Base.metadata.drop_all(bind=engine)
+    
     print("Creating tables...")
     Base.metadata.create_all(bind=engine)
     

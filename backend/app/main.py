@@ -22,6 +22,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 # Create tables
@@ -51,6 +52,10 @@ from .routers_admin import router as admin_router
 app.include_router(admin_router)
 from .routers_pdf import router as pdf_router
 app.include_router(pdf_router)
+from .routers_visits import router as visits_router
+app.include_router(visits_router)
+from .routers_giveaways import router as giveaways_router
+app.include_router(giveaways_router)
 
 @app.get("/")
 def root():

@@ -1,7 +1,7 @@
 import axios from 'axios'
 import Cookies from 'js-cookie'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://backend-service-production-1daa.up.railway.app'
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000'
 
 export const api = axios.create({
   baseURL: API_BASE,

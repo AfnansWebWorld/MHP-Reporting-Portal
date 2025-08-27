@@ -26,12 +26,28 @@ def seed(db: Session):
         db.add(user)
     
     db.commit()
+    
+    # Refresh to get IDs
+    db.refresh(admin)
+    db.refresh(user)
+    
     # Add some demo clients if none
     if db.query(models.Client).count() == 0:
         clients = [
-            models.Client(name="Client A", phone="123-456-7890", address="123 Main St"),
-            models.Client(name="Client B", phone="555-111-2222", address="456 Oak Ave"),
-            models.Client(name="Client C", phone="999-888-7777", address="789 Pine Rd"),
+            models.Client(name="Client A", phone="123-456-7890", address="123 Main St", user_id=user.id),
+            models.Client(name="Client B", phone="555-111-2222", address="456 Oak Ave", user_id=user.id),
+            models.Client(name="Admin Client", phone="999-888-7777", address="789 Pine Rd", user_id=admin.id),
         ]
         db.add_all(clients)
+        db.commit()
+    
+    # Add predefined giveaways if none exist
+    if db.query(models.Giveaway).count() == 0:
+        giveaways = [
+            models.Giveaway(name="Wall Clock"),
+            models.Giveaway(name="Pen"),
+            models.Giveaway(name="Keychain"),
+            models.Giveaway(name="Paper weight"),
+        ]
+        db.add_all(giveaways)
         db.commit()

@@ -32,3 +32,12 @@ def stats(db: Session = Depends(get_db), admin=Depends(require_admin)):
             } for u in data
         ]
     }
+
+@router.get("/reports", response_model=list[schemas.ReportOut])
+def list_all_reports(db: Session = Depends(get_db), admin=Depends(require_admin)):
+    """Get all reports for admin interface"""
+    return (
+        db.query(models.Report)
+        .order_by(models.Report.created_at.desc())
+        .all()
+    )
