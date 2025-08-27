@@ -64,10 +64,8 @@ def create_report(report_in: schemas.ReportCreate, db: Session = Depends(get_db)
         # If quantity reaches 0, mark assignment as inactive
         if assignment.quantity <= 0:
             assignment.is_active = False
-    # increment user submissions counter
-    db_user = db.query(models.User).filter(models.User.id == user.id).first()
-    if db_user:
-        db_user.submissions_count = (db_user.submissions_count or 0) + 1
+    # Note: submissions_count is now incremented only when reports are sent via email
+    # This was moved to /pdf/me/send endpoint to match user requirements
     
     # Increment daily visit count when report is saved (create a new visit for each report)
     today = date.today()
