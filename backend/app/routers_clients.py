@@ -33,6 +33,7 @@ def create_client(client_in: schemas.ClientCreate, db: Session = Depends(get_db)
         phone2=client_in.phone2,
         address=client_in.address,
         city=client_in.city,
+        store_name=client_in.store_name,
         user_id=user.id
     )
     db.add(client)
@@ -73,6 +74,7 @@ def update_client(client_id: int, client_in: schemas.ClientCreate, db: Session =
     client.phone2 = client_in.phone2
     client.address = client_in.address
     client.city = client_in.city
+    client.store_name = client_in.store_name
     
     db.commit()
     db.refresh(client)

@@ -11,6 +11,7 @@ interface Client {
   phone2?: string
   address: string
   city: string
+  store_name?: string
   user_id: number
   created_at: string
 }
@@ -31,6 +32,7 @@ export default function Clients() {
   const [phone2, setPhone2] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
+  const [storeName, setStoreName] = useState('')
   const [message, setMessage] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
@@ -39,6 +41,7 @@ export default function Clients() {
   const [editPhone2, setEditPhone2] = useState('')
   const [editAddress, setEditAddress] = useState('')
   const [editCity, setEditCity] = useState('')
+  const [editStoreName, setEditStoreName] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -87,7 +90,8 @@ export default function Clients() {
         phone: phone.trim(),
         phone2: phone2.trim() || null,
         address: address.trim(),
-        city: city.trim()
+        city: city.trim(),
+        store_name: storeName.trim() || null
       })
       
       setClients([...clients, response.data])
@@ -96,6 +100,7 @@ export default function Clients() {
       setPhone2('')
       setAddress('')
       setCity('')
+      setStoreName('')
       setMessage('Client created successfully!')
       setShowForm(false)
       
@@ -113,6 +118,7 @@ export default function Clients() {
     setEditPhone2(client.phone2 || '')
     setEditAddress(client.address)
     setEditCity(client.city)
+    setEditStoreName(client.store_name || '')
     setShowForm(false)
   }
 
@@ -123,6 +129,7 @@ export default function Clients() {
     setEditPhone2('')
     setEditAddress('')
     setEditCity('')
+    setEditStoreName('')
   }
 
   const updateClient = async () => {
@@ -137,7 +144,8 @@ export default function Clients() {
         phone: editPhone.trim(),
         phone2: editPhone2.trim() || null,
         address: editAddress.trim(),
-        city: editCity.trim()
+        city: editCity.trim(),
+        store_name: editStoreName.trim() || null
       })
       
       setClients(clients.map(c => c.id === editingClient.id ? response.data : c))
@@ -279,6 +287,15 @@ export default function Clients() {
                     onChange={(e) => setCity(e.target.value)}
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Store Name</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    placeholder="Enter store name"
+                    value={storeName}
+                    onChange={(e) => setStoreName(e.target.value)}
+                  />
+                </div>
               </div>
               <div className="flex gap-3">
                 <button
@@ -381,6 +398,15 @@ export default function Clients() {
                     placeholder="Enter city"
                     value={editCity}
                     onChange={(e) => setEditCity(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Store Name</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                    placeholder="Enter store name (optional)"
+                    value={editStoreName}
+                    onChange={(e) => setEditStoreName(e.target.value)}
                   />
                 </div>
               </div>

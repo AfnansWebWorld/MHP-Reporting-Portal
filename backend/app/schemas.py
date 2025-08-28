@@ -37,6 +37,7 @@ class ClientBase(BaseModel):
     phone2: Optional[str] = None  # Optional second phone number
     address: str
     city: str
+    store_name: Optional[str] = None  # Optional store name
 
 class ClientCreate(ClientBase):
     pass
