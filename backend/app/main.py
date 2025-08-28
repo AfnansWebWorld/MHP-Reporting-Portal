@@ -14,6 +14,9 @@ origins = [
     "http://127.0.0.1:3000",
     "https://mhp-reporting-portal.up.railway.app",
     "https://*.railway.app",
+    "https://frontend-service-production-1daa.up.railway.app",
+    "https://backend-service-production-1daa.up.railway.app",
+    "*",  # Allow all origins for debugging
 ]
 
 app.add_middleware(
