@@ -13,6 +13,12 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 def list_users(db: Session = Depends(get_db), admin=Depends(require_admin)):
     return db.query(models.User).all()
 
+@router.get("/users/list")
+def get_users_list(db: Session = Depends(get_db), admin=Depends(require_admin)):
+    """Get a simplified list of users for dropdown menus"""
+    users = db.query(models.User.id, models.User.full_name).order_by(models.User.full_name).all()
+    return [{"id": user.id, "name": user.full_name} for user in users]
+
 @router.get("/users/{user_id}/reports", response_model=list[schemas.ReportOut])
 def list_user_reports(user_id: int, db: Session = Depends(get_db), admin=Depends(require_admin)):
     return (
@@ -49,6 +55,7 @@ def list_all_reports(db: Session = Depends(get_db), admin=Depends(require_admin)
 def get_monthly_report(
     start_date: Optional[str] = Query(None, description="Start date in YYYY-MM-DD format"),
     end_date: Optional[str] = Query(None, description="End date in YYYY-MM-DD format"),
+    user_id: Optional[int] = Query(None, description="Filter by specific user ID"),
     db: Session = Depends(get_db), 
     admin=Depends(require_admin)
 ):
@@ -69,35 +76,53 @@ def get_monthly_report(
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
     
     # Query daily visit counts with username information
-    daily_visits = db.query(
+    visit_query = db.query(
         cast(models.Visit.visit_date, Date).label('date'),
         func.count(models.Visit.id).label('count'),
         models.User.full_name.label('username'),
         models.User.id.label('user_id')
     ).join(
         models.User, models.Visit.user_id == models.User.id
-    ).filter(
-        and_(
-            models.Visit.visit_date >= start_date,
-            models.Visit.visit_date <= end_date,
-            models.Visit.is_deleted == False
-        )
+    )
+    
+    # Apply filters
+    filters = [
+        models.Visit.visit_date >= start_date,
+        models.Visit.visit_date <= end_date,
+        models.Visit.is_deleted == False
+    ]
+    
+    # Add user filter if specified
+    if user_id is not None:
+        filters.append(models.Visit.user_id == user_id)
+    
+    daily_visits = visit_query.filter(
+        and_(*filters)
     ).group_by(cast(models.Visit.visit_date, Date), models.User.id, models.User.full_name).all()
     
     # Query daily recovery amounts (payment_amount from reports) with username information
-    daily_recovery = db.query(
+    recovery_query = db.query(
         cast(models.Report.created_at, Date).label('date'),
         func.sum(models.Report.payment_amount).label('amount'),
         models.User.full_name.label('username'),
         models.User.id.label('user_id')
     ).join(
         models.User, models.Report.user_id == models.User.id
-    ).filter(
-        and_(
-            cast(models.Report.created_at, Date) >= start_date,
-            cast(models.Report.created_at, Date) <= end_date,
-            models.Report.payment_received == True
-        )
+    )
+    
+    # Apply filters
+    recovery_filters = [
+        cast(models.Report.created_at, Date) >= start_date,
+        cast(models.Report.created_at, Date) <= end_date,
+        models.Report.payment_received == True
+    ]
+    
+    # Add user filter if specified
+    if user_id is not None:
+        recovery_filters.append(models.Report.user_id == user_id)
+    
+    daily_recovery = recovery_query.filter(
+        and_(*recovery_filters)
     ).group_by(cast(models.Report.created_at, Date), models.User.id, models.User.full_name).all()
     
     # Format the results with username information
@@ -142,6 +167,7 @@ def get_monthly_report(
 def export_monthly_report(
     start_date: Optional[str] = Query(None, description="Start date in YYYY-MM-DD format"),
     end_date: Optional[str] = Query(None, description="End date in YYYY-MM-DD format"),
+    user_id: Optional[int] = Query(None, description="Filter by specific user ID"),
     format: str = Query("csv", description="Export format: csv or pdf"),
     db: Session = Depends(get_db),
     admin=Depends(require_admin)
@@ -155,7 +181,7 @@ def export_monthly_report(
     
     try:
         # Get report data using the existing endpoint logic
-        report_data = get_monthly_report(start_date, end_date, db, admin)
+        report_data = get_monthly_report(start_date, end_date, user_id, db, admin)
         
         # Validate that we have data to export
         if not report_data['daily_visits'] and not report_data['daily_recovery']:

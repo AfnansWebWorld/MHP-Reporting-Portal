@@ -29,6 +29,11 @@ interface MonthlyReportProps {
   className?: string;
 }
 
+interface User {
+  id: number;
+  name: string;
+}
+
 interface ReportData {
   daily_visits: {
     date: string;
@@ -56,6 +61,9 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState<boolean>(true);
 
   // Set default date range to current month
   useEffect(() => {
@@ -66,19 +74,42 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
     setStartDate(firstDay.toISOString().split('T')[0]);
     setEndDate(lastDay.toISOString().split('T')[0]);
   }, []);
+  
+  // Fetch users for dropdown
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const response = await api.get('/admin/users/list');
+        setUsers(response.data);
+      } catch (err: any) {
+        console.error('Failed to fetch users:', err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    
+    fetchUsers();
+  }, []);
 
-  // Fetch report data when date range changes
+  // Fetch report data when date range or selected user changes
   useEffect(() => {
     if (startDate && endDate) {
       fetchReportData();
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, selectedUserId]);
 
   const fetchReportData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/admin/monthly-report?start_date=${startDate}&end_date=${endDate}`);
+      // Build query parameters
+      let url = `/admin/monthly-report?start_date=${startDate}&end_date=${endDate}`;
+      if (selectedUserId !== null) {
+        url += `&user_id=${selectedUserId}`;
+      }
+      
+      const response = await api.get(url);
       setReportData(response.data);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch report data');
@@ -103,7 +134,10 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
       }
       
       // Create the export URL with proper encoding for cross-browser compatibility
-      const exportUrl = `${api.defaults.baseURL}/admin/monthly-report/export?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&format=${encodeURIComponent(format)}`;
+      let exportUrl = `${api.defaults.baseURL}/admin/monthly-report/export?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&format=${encodeURIComponent(format)}`;
+      if (selectedUserId !== null) {
+        exportUrl += `&user_id=${encodeURIComponent(selectedUserId.toString())}`;
+      }
       
       // Use axios directly through our configured api instance which already has auth headers
       try {
@@ -111,7 +145,8 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
           params: {
             start_date: startDate,
             end_date: endDate,
-            format: format
+            format: format,
+            ...(selectedUserId !== null && { user_id: selectedUserId })
           },
           responseType: 'blob',
           headers: {
@@ -128,7 +163,12 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = format === 'csv' ? `monthly_report_${startDate}_to_${endDate}.csv` : `monthly_report_${startDate}_to_${endDate}.pdf`;
+        // Create filename with user info if filtered
+        const selectedUser = selectedUserId !== null ? users.find(u => u.id === selectedUserId)?.name : null;
+        const userSuffix = selectedUser ? `_${selectedUser.replace(/\s+/g, '_')}` : '';
+        link.download = format === 'csv' 
+          ? `monthly_report${userSuffix}_${startDate}_to_${endDate}.csv` 
+          : `monthly_report${userSuffix}_${startDate}_to_${endDate}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -222,6 +262,21 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Monthly Activity Report</h2>
         <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex items-center space-x-2">
+            <label htmlFor="user-select" className="text-sm font-medium text-gray-700">User:</label>
+            <select
+              id="user-select"
+              value={selectedUserId !== null ? selectedUserId : ''}
+              onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm text-gray-900"
+              disabled={loadingUsers}
+            >
+              <option value="">All Users</option>
+              {users.map(user => (
+                <option key={user.id} value={user.id}>{user.name}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center space-x-2">
             <label htmlFor="start-date" className="text-sm font-medium text-gray-700">Start:</label>
             <input
