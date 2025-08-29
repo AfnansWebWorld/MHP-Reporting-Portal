@@ -112,9 +112,9 @@ class VisitOut(VisitBase):
         }
 
 class VisitStats(BaseModel):
-    daily_visits: int
-    monthly_visits: int
-    total_visits: int
+    daily_visits: int  # Represents Daily Calls in the frontend
+    monthly_visits: int  # Represents Monthly Calls in the frontend
+    total_visits: int  # Used for internal tracking
 
 class GiveawayBase(BaseModel):
     name: str

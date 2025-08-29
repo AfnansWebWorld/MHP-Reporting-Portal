@@ -93,7 +93,7 @@ export default function Dashboard() {
       const res = await api.post('/reports/', reportData)
       setReports([res.data, ...reports])
       
-      // Refresh visit stats to show updated daily visits
+      // Refresh call stats to show updated daily calls
       const visitStatsRes = await api.get('/visits/stats')
       setVisitStats(visitStatsRes.data)
       
@@ -172,7 +172,7 @@ export default function Dashboard() {
       const r = await api.get('/reports/me')
       setReports(r.data)
       
-      // Refresh visit stats to show reset daily visits (should be 0)
+      // Refresh call stats to show reset daily calls (should be 0)
       const visitStatsRes = await api.get('/visits/stats')
       setVisitStats(visitStatsRes.data)
     } catch (e: any) {
@@ -194,7 +194,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium mb-1">Daily Visits</p>
+                <p className="text-gray-600 text-sm font-medium mb-1">Daily Calls</p>
                 <p className="text-2xl font-bold text-gray-900">{visitStats.daily_visits}</p>
               </div>
               <div className="bg-blue-50 rounded-lg p-3">
@@ -208,7 +208,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium mb-1">Monthly Visits</p>
+                <p className="text-gray-600 text-sm font-medium mb-1">Monthly Calls</p>
                 <p className="text-2xl font-bold text-gray-900">{visitStats.monthly_visits}</p>
               </div>
               <div className="bg-green-50 rounded-lg p-3">
@@ -222,7 +222,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium mb-1">Total Recovery</p>
+                <p className="text-gray-600 text-sm font-medium mb-1">Daily Recovery</p>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(reports.reduce((sum, r) => sum + (r.payment_amount || 0), 0))}</p>
               </div>
               <div className="bg-orange-50 rounded-lg p-3">
@@ -259,7 +259,7 @@ export default function Dashboard() {
                     <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd"></path>
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">Generate New Report</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Generate Call</h2>
               </div>
               <div className="space-y-6">
                 <div>
@@ -364,13 +364,7 @@ export default function Dashboard() {
                 
                 <div className="flex flex-col sm:flex-row gap-3 mt-6">
                   <button onClick={onSave} className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
-                    Save Report
-                  </button>
-                  <button onClick={onPDF} className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
-                    Generate PDF
-                  </button>
-                  <button onClick={onSend} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
-                    Send Report
+                    Save Call
                   </button>
                 </div>
                 
@@ -378,7 +372,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* My Records Section */}
+            {/* My Daily Calls Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
                 <div className="bg-indigo-50 rounded-lg p-2 mr-3">
@@ -387,9 +381,9 @@ export default function Dashboard() {
                     <path fillRule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"></path>
                   </svg>
                 </div>
-                My Records
+                My Daily Calls
               </h2>
-              <div className="space-y-3 max-h-80 overflow-y-auto">
+              <div className="space-y-3 max-h-80 overflow-y-auto mb-6">
                 {reports.map(r => (
                   <div key={r.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition-colors">
                     <div className="flex items-center justify-between">
@@ -415,6 +409,14 @@ export default function Dashboard() {
                   </div>
                 ))}
                 {reports.length === 0 && <div className="p-4 text-gray-500 text-center">No records yet.</div>}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button onClick={onPDF} className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+                  Generate PDF
+                </button>
+                <button onClick={onSend} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+                  Submit Report
+                </button>
               </div>
             </div>
           </div>
