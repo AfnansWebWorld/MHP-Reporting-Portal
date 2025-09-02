@@ -150,21 +150,6 @@ export default function Login() {
                 )}
               </button>
             </form>
-            
-            {/* Demo Credentials */}
-            <div className="mt-6 sm:mt-8 p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-200">
-              <p className="text-gray-700 font-semibold mb-3 text-center text-sm sm:text-base">Demo Credentials</p>
-              <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white rounded-lg px-3 py-2 space-y-1 sm:space-y-0 border border-gray-100">
-                  <span className="text-gray-600 text-xs sm:text-sm">Admin:</span>
-                  <code className="text-blue-600 text-xs sm:text-sm font-mono break-all">admin@mhp.com / admin123</code>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white rounded-lg px-3 py-2 space-y-1 sm:space-y-0 border border-gray-100">
-                  <span className="text-gray-600 text-xs sm:text-sm">User:</span>
-                  <code className="text-blue-600 text-xs sm:text-sm font-mono break-all">user@mhp.com / user123</code>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
