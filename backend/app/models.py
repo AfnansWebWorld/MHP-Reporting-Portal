@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Enum, Date, Float
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Enum, Date, Float, LargeBinary, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime, date
 from .database import Base
@@ -104,3 +104,16 @@ class GiveawayUsage(Base):
     
     report = relationship("Report", back_populates="giveaway_usages")
     giveaway_assignment = relationship("GiveawayAssignment")
+
+class PDFReport(Base):
+    __tablename__ = "pdf_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    filename = Column(String, nullable=False)
+    pdf_data = Column(LargeBinary, nullable=False)  # Store PDF binary data
+    report_date = Column(Date, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    file_size = Column(Integer, nullable=False)  # File size in bytes
+    
+    user = relationship("User")

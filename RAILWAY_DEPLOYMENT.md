@@ -45,12 +45,6 @@ railway login
    ```
    DATABASE_URL=postgresql+psycopg2://postgres:password@host:port/database
    SECRET_KEY=your-super-secret-jwt-key-here
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USER=your@gmail.com
-   SMTP_PASSWORD=your_app_password
-   MAIL_FROM_NAME=MHP Portal
-   SEND_EMAIL_TO=recipient@example.com
    ```
    
    **Important:** Railway will automatically provide the `DATABASE_URL` from your PostgreSQL service. You can find it in the PostgreSQL service variables.
@@ -107,12 +101,7 @@ After deployment, you'll have:
 |----------|-------------|----------|
 | `DATABASE_URL` | PostgreSQL connection string | Auto-provided by Railway |
 | `SECRET_KEY` | JWT secret key | `your-super-secret-key` |
-| `SMTP_HOST` | Email server host | `smtp.gmail.com` |
-| `SMTP_PORT` | Email server port | `587` |
-| `SMTP_USER` | Email username | `your@gmail.com` |
-| `SMTP_PASSWORD` | Email password/app password | `your_app_password` |
-| `MAIL_FROM_NAME` | Sender name | `MHP Portal` |
-| `SEND_EMAIL_TO` | Default recipient | `admin@example.com` |
+
 
 ### Frontend Variables
 | Variable | Description | Example |

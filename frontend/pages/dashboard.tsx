@@ -164,10 +164,10 @@ export default function Dashboard() {
   }
 
   const onSend = async () => {
-    setMessage('Sending...')
+    setMessage('Saving report...')
     try {
-      await api.post('/pdf/me/send')
-      setMessage('Email sent! All reports have been cleared.')
+      const response = await api.post('/pdf/me/save')
+      setMessage(`Report saved successfully as ${response.data.filename}! All reports have been cleared.`)
       // Refresh reports list to show cleared data
       const r = await api.get('/reports/me')
       setReports(r.data)
@@ -176,7 +176,7 @@ export default function Dashboard() {
       const visitStatsRes = await api.get('/visits/stats')
       setVisitStats(visitStatsRes.data)
     } catch (e: any) {
-      setMessage(e.response?.data?.detail || 'Failed to send email')
+      setMessage(e.response?.data?.detail || 'Failed to save report')
     }
   }
 

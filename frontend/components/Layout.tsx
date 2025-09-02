@@ -135,6 +135,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </Link>
           )}
           {user?.role === 'admin' && (
+            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/pdf-reports">
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              PDF Reports
+            </Link>
+          )}
+          {user?.role === 'admin' && (
             <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/giveaways">
               <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
@@ -268,6 +276,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">📊</span>
                   <span className="font-medium">Monthly Activity Report</span>
+                </Link>
+              )}
+              
+              {user?.role === 'admin' && (
+                <Link 
+                  href="/pdf-reports" 
+                  className="group flex items-center px-4 py-3 rounded-xl text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">📄</span>
+                  <span className="font-medium">PDF Reports</span>
                 </Link>
               )}
               
