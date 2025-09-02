@@ -52,3 +52,49 @@ def create_user_simple(user_data: dict, db: Session = Depends(get_db), admin=Dep
 @router.get("/me", response_model=schemas.UserOut)
 def me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+@router.put("/users/{user_id}", response_model=schemas.UserOut)
+def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Depends(get_db), admin=Depends(require_admin)):
+    """Update user details - admin only"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if email is being changed and if it conflicts
+    if user_update.email and user_update.email != user.email:
+        existing = db.query(models.User).filter(models.User.email == user_update.email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        user.email = user_update.email
+    
+    # Update other fields
+    if user_update.full_name is not None:
+        user.full_name = user_update.full_name
+    
+    if user_update.password:
+        user.hashed_password = get_password_hash(user_update.password)
+    
+    db.commit()
+    db.refresh(user)
+    return user
+
+@router.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), admin=Depends(require_admin)):
+    """Delete user - admin only"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if user has any reports
+    reports_count = db.query(models.Report).filter(models.Report.user_id == user_id).count()
+    if reports_count > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete user with {reports_count} existing reports")
+    
+    # Check if user has any clients
+    clients_count = db.query(models.Client).filter(models.Client.user_id == user_id).count()
+    if clients_count > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete user with {clients_count} existing clients")
+    
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted successfully"}

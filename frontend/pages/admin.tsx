@@ -49,6 +49,11 @@ export default function Admin() {
   const [editName, setEditName] = useState('')
   const [editPhone, setEditPhone] = useState('')
   const [editAddress, setEditAddress] = useState('')
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [editUserEmail, setEditUserEmail] = useState('')
+  const [editUserName, setEditUserName] = useState('')
+  const [editUserPassword, setEditUserPassword] = useState('')
+  const [userMessage, setUserMessage] = useState('')
 
 
   const router = useRouter()
@@ -172,6 +177,65 @@ export default function Admin() {
       setClients(clientsRes.data)
     } catch (e: any) {
       setClientMessage(e.response?.data?.detail || 'Error deleting client')
+    }
+  }
+
+  const startEditUser = (user: User) => {
+    setEditingUser(user)
+    setEditUserEmail(user.email)
+    setEditUserName(user.full_name || '')
+    setEditUserPassword('')
+    setUserMessage('')
+  }
+
+  const cancelEditUser = () => {
+    setEditingUser(null)
+    setEditUserEmail('')
+    setEditUserName('')
+    setEditUserPassword('')
+    setUserMessage('')
+  }
+
+  const updateUser = async () => {
+    if (!editingUser) return
+    if (!editUserEmail || !editUserName) {
+      setUserMessage('Please fill in email and full name')
+      return
+    }
+
+    try {
+      const updateData: any = {
+        email: editUserEmail,
+        full_name: editUserName
+      }
+      
+      if (editUserPassword) {
+        updateData.password = editUserPassword
+      }
+
+      await api.put(`/auth/users/${editingUser.id}`, updateData)
+      setUserMessage('User updated successfully!')
+      
+      // Reload users
+      const res = await api.get('/admin/stats')
+      setUsers(res.data.users)
+      cancelEditUser()
+    } catch (e: any) {
+      setUserMessage(e.response?.data?.detail || 'Error updating user')
+    }
+  }
+
+  const deleteUser = async (userId: number, userEmail: string) => {
+    if (!confirm(`Are you sure you want to delete user "${userEmail}"?`)) return
+    try {
+      await api.delete(`/auth/users/${userId}`)
+      setUserMessage('User deleted successfully!')
+      
+      // Reload users
+      const res = await api.get('/admin/stats')
+      setUsers(res.data.users)
+    } catch (e: any) {
+      setUserMessage(e.response?.data?.detail || 'Error deleting user')
     }
   }
 
@@ -396,6 +460,26 @@ export default function Admin() {
                     <div className="text-sm text-gray-600">Reports Created</div>
                     <div className="text-2xl font-bold text-gray-900">{u.count ?? '0'}</div>
                   </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => startEditUser(u)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteUser(u.id, u.email)}
+                      className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -408,7 +492,96 @@ export default function Admin() {
               </div>
             )}
           </div>
+          {userMessage && (
+            <div className={`text-sm mt-4 p-3 rounded-lg ${
+              userMessage.includes('successfully') 
+                ? 'text-green-700 bg-green-50 border border-green-200' 
+                : 'text-red-700 bg-red-50 border border-red-200'
+            }`}>
+              {userMessage}
+            </div>
+          )}
         </div>
+
+        {/* Edit User Form */}
+        {editingUser && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <div className="bg-yellow-50 rounded-lg p-3 mr-4">
+                  <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Edit User</h2>
+              </div>
+              <button
+                onClick={cancelEditUser}
+                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder="Enter email"
+                  value={editUserEmail}
+                  onChange={(e) => setEditUserEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <input
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder="Enter full name"
+                  value={editUserName}
+                  onChange={(e) => setEditUserName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New Password (optional)</label>
+                <input
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder="Leave blank to keep current password"
+                  type="password"
+                  value={editUserPassword}
+                  onChange={(e) => setEditUserPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={updateUser}
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                Update User
+              </button>
+              <button
+                onClick={cancelEditUser}
+                className="bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {userMessage && (
+              <div className={`text-sm mt-4 p-3 rounded-lg ${
+                userMessage.includes('successfully') 
+                  ? 'text-green-700 bg-green-50 border border-green-200' 
+                  : 'text-red-700 bg-red-50 border border-red-200'
+              }`}>
+                {userMessage}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Edit Client Form */}
         {editingClient && (
