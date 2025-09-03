@@ -9,7 +9,10 @@ from . import models
 
 def format_currency(amount: float) -> str:
     """Format currency with comma separators"""
-    return f"Rs. {amount:,.2f}"
+    if amount == int(amount):
+        return f"Rs. {int(amount):,}"
+    else:
+        return f"Rs. {amount:,.2f}"
 
 
 def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> bytes:
@@ -31,8 +34,8 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> byt
     y = height - 1.5 * inch
 
     headers = ["S.no", "Client", "Phone", "Address", "Shift", "Payment", "P/S", "Order", "Giveaway"]
-    col_x = [0.3*inch, 0.8*inch, 2.2*inch, 3.1*inch, 4.9*inch, 5.5*inch, 6.5*inch, 7.0*inch, 7.5*inch]
-    col_widths = [0.5*inch, 1.4*inch, 0.9*inch, 2.1*inch, 0.6*inch, 1.0*inch, 0.5*inch, 0.5*inch, 1.2*inch]
+    col_x = [0.25*inch, 0.75*inch, 2.0*inch, 3.0*inch, 4.6*inch, 5.2*inch, 6.2*inch, 6.7*inch, 7.2*inch]
+    col_widths = [0.5*inch, 1.25*inch, 1.0*inch, 1.6*inch, 0.6*inch, 1.0*inch, 0.5*inch, 0.5*inch, 1.0*inch]
 
     # Draw header background and text (bold)
     header_y = y
@@ -48,15 +51,15 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> byt
     
     # Draw header borders
     y -= 0.2 * inch
-    c.line(0.3*inch, y, 8.7*inch, y)  # Bottom line of header
-    c.line(0.3*inch, header_y + 0.15*inch, 8.7*inch, header_y + 0.15*inch)  # Top line of header
+    c.line(0.25*inch, y, 8.2*inch, y)  # Bottom line of header
+    c.line(0.25*inch, header_y + 0.15*inch, 8.2*inch, header_y + 0.15*inch)  # Top line of header
     
     # Draw vertical lines for header
     c.line(0.25*inch, header_y + 0.15*inch, 0.25*inch, y)  # Left border of table
     for i in range(1, len(col_x)):
-        c.line(col_x[i] + 0.05*inch, header_y + 0.15*inch, col_x[i] + 0.05*inch, y)
+        c.line(col_x[i], header_y + 0.15*inch, col_x[i], y)
     # Right border
-    c.line(8.7*inch, header_y + 0.15*inch, 8.7*inch, y)
+    c.line(8.2*inch, header_y + 0.15*inch, 8.2*inch, y)
     
     y -= 0.15 * inch
 
@@ -186,10 +189,10 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> byt
         
         # Format payment with comma separators
         payment_text = format_currency(r.payment_amount) if r.payment_received and r.payment_amount > 0 else "Rs. 0.00"
-        c.drawString(col_x[5] + text_padding, y, payment_text)
+        c.drawString(col_x[5] + text_padding + 0.05*inch, y, payment_text)
         
         c.drawString(col_x[6] + text_padding, y, "Yes" if r.physician_sample else "No")
-        c.drawString(col_x[7] + text_padding, y, "Yes" if r.order_received else "No")
+        c.drawString(col_x[7] + text_padding + 0.05*inch, y, "Yes" if r.order_received else "No")
         
         # Draw giveaway text (potentially multi-line)
         for i, line in enumerate(giveaway_lines):
@@ -200,16 +203,38 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> byt
         row_bottom = y - max(row_height, 0.25 * inch) + 0.15*inch
         
         # Draw horizontal lines (top and bottom of row)
-        c.line(0.3*inch, row_bottom, 8.7*inch, row_bottom)
+        c.line(0.25*inch, row_bottom, 8.2*inch, row_bottom)
         
         # Draw vertical lines for each column (left border of each column)
         c.line(0.25*inch, row_top, 0.25*inch, row_bottom)  # Left border of table
         for i in range(1, len(col_x)):
-            c.line(col_x[i] + 0.05*inch, row_top, col_x[i] + 0.05*inch, row_bottom)
+            c.line(col_x[i], row_top, col_x[i], row_bottom)
         # Right border
-        c.line(8.7*inch, row_top, 8.7*inch, row_bottom)
+        c.line(8.2*inch, row_top, 8.2*inch, row_bottom)
         
         y -= max(row_height, 0.25 * inch)
+
+    # Calculate and display total payment amount
+    total_payment = sum(r.payment_amount for r in reports if r.payment_received and r.payment_amount > 0)
+    
+    # Check if we need space for the total (need at least 1 inch)
+    if y < 1.5 * inch:
+        c.showPage()
+        y = height - 1 * inch
+    
+    # Add some space before the total
+    y -= 0.3 * inch
+    
+    # Draw a line above the total
+    c.line(5.2 * inch, y + 0.1 * inch, 8.2 * inch, y + 0.1 * inch)
+    
+    # Draw the total payment
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(5.2 * inch + 0.08 * inch, y - 0.2 * inch, "Total Payment:")
+    c.drawString(6.8 * inch + 0.08 * inch, y - 0.2 * inch, format_currency(total_payment))
+    
+    # Draw a line below the total
+    c.line(5.2 * inch, y - 0.4 * inch, 8.2 * inch, y - 0.4 * inch)
 
     c.showPage()
     c.save()

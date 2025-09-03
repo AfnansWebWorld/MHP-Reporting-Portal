@@ -60,6 +60,7 @@ def get_monthly_report(
     admin=Depends(require_admin)
 ):
     """Get monthly report data for admin dashboard"""
+    print(f"Monthly report request - start_date: {start_date}, end_date: {end_date}, user_id: {user_id} (type: {type(user_id)})")
     # Default to current month if no dates provided
     if not start_date:
         today = date.today()
@@ -75,15 +76,23 @@ def get_monthly_report(
     else:
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
     
-    # Query daily visit counts with username information
-    visit_query = db.query(
-        cast(models.Visit.visit_date, Date).label('date'),
-        func.count(models.Visit.id).label('count'),
-        models.User.full_name.label('username'),
-        models.User.id.label('user_id')
-    ).join(
-        models.User, models.Visit.user_id == models.User.id
-    )
+    # Query daily visit counts - aggregate by date when filtering by user
+    if user_id is not None:
+        # When filtering by specific user, aggregate by date only
+        visit_query = db.query(
+            cast(models.Visit.visit_date, Date).label('date'),
+            func.count(models.Visit.id).label('count')
+        )
+    else:
+        # When showing all users, include username information for export
+        visit_query = db.query(
+            cast(models.Visit.visit_date, Date).label('date'),
+            func.count(models.Visit.id).label('count'),
+            models.User.full_name.label('username'),
+            models.User.id.label('user_id')
+        ).join(
+            models.User, models.Visit.user_id == models.User.id
+        )
     
     # Apply filters
     filters = [
@@ -96,55 +105,86 @@ def get_monthly_report(
     if user_id is not None:
         filters.append(models.Visit.user_id == user_id)
     
-    daily_visits = visit_query.filter(
-        and_(*filters)
-    ).group_by(cast(models.Visit.visit_date, Date), models.User.id, models.User.full_name).all()
+    if user_id is not None:
+        daily_visits = visit_query.filter(
+            and_(*filters)
+        ).group_by(cast(models.Visit.visit_date, Date)).all()
+    else:
+        daily_visits = visit_query.filter(
+            and_(*filters)
+        ).group_by(cast(models.Visit.visit_date, Date), models.User.id, models.User.full_name).all()
     
-    # Query daily recovery amounts (payment_amount from reports) with username information
-    recovery_query = db.query(
-        cast(models.Report.created_at, Date).label('date'),
-        func.sum(models.Report.payment_amount).label('amount'),
-        models.User.full_name.label('username'),
-        models.User.id.label('user_id')
-    ).join(
-        models.User, models.Report.user_id == models.User.id
+    # Calculate daily recovery (payment amounts from both active reports and submitted PDFs)
+    daily_recovery = []
+    
+    # Get recovery from active reports
+    recovery_query = (
+        db.query(
+            models.Report.created_at,
+            models.Report.payment_amount
+        )
+        .filter(
+            models.Report.user_id == user_id if user_id else True,
+            models.Report.payment_received == True,
+            models.Report.created_at >= start_date,
+            models.Report.created_at < end_date
+        )
+        .all()
     )
     
-    # Apply filters
-    recovery_filters = [
-        cast(models.Report.created_at, Date) >= start_date,
-        cast(models.Report.created_at, Date) <= end_date,
-        models.Report.payment_received == True
-    ]
+    # Get recovery from submitted PDF reports
+    pdf_recovery_query = (
+        db.query(
+            models.PDFReport.created_at,
+            models.PDFReport.total_payment_amount
+        )
+        .filter(
+            models.PDFReport.user_id == user_id if user_id else True,
+            models.PDFReport.created_at >= start_date,
+            models.PDFReport.created_at < end_date,
+            models.PDFReport.total_payment_amount > 0
+        )
+        .all()
+    )
     
-    # Add user filter if specified
-    if user_id is not None:
-        recovery_filters.append(models.Report.user_id == user_id)
+    # Group recovery by date from both sources
+    recovery_by_date = {}
     
-    daily_recovery = recovery_query.filter(
-        and_(*recovery_filters)
-    ).group_by(cast(models.Report.created_at, Date), models.User.id, models.User.full_name).all()
+    # Add active reports recovery
+    for created_at, amount in recovery_query:
+        date_key = created_at.date()
+        if date_key not in recovery_by_date:
+            recovery_by_date[date_key] = 0
+        recovery_by_date[date_key] += amount
     
-    # Format the results with username information
+    # Add PDF reports recovery
+    for created_at, amount in pdf_recovery_query:
+        date_key = created_at.date()
+        if date_key not in recovery_by_date:
+            recovery_by_date[date_key] = 0
+        recovery_by_date[date_key] += amount
+    
+    # Convert to list format with day names
+    for date_obj, amount in recovery_by_date.items():
+        daily_recovery.append({
+            "date": date_obj.strftime("%Y-%m-%d"),
+            "day": date_obj.strftime("%A"),
+            "amount": amount
+        })
+    
+    # Sort by date
+    daily_recovery.sort(key=lambda x: x["date"])
+    
+    # Format the results
     visit_data = [
         {
             "date": visit.date.strftime("%Y-%m-%d"),
             "day": visit.date.strftime("%A"),
-            "username": visit.username,
-            "user_id": visit.user_id,
             "count": visit.count
         } for visit in daily_visits
     ]
     
-    recovery_data = [
-        {
-            "date": recovery.date.strftime("%Y-%m-%d"),
-            "day": recovery.date.strftime("%A"),
-            "username": recovery.username,
-            "user_id": recovery.user_id,
-            "amount": float(recovery.amount) if recovery.amount else 0.0
-        } for recovery in daily_recovery
-    ]
+    recovery_data = daily_recovery
     
     # Calculate monthly totals
     total_visits = sum(item["count"] for item in visit_data) if visit_data else 0

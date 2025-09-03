@@ -80,10 +80,13 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
     const fetchUsers = async () => {
       setLoadingUsers(true);
       try {
+        console.log('Fetching users from /admin/users/list');
         const response = await api.get('/admin/users/list');
+        console.log('Users fetched successfully:', response.data);
         setUsers(response.data);
       } catch (err: any) {
         console.error('Failed to fetch users:', err);
+        console.error('Error details:', err.response?.data, err.response?.status);
       } finally {
         setLoadingUsers(false);
       }
@@ -94,6 +97,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
 
   // Fetch report data when date range or selected user changes
   useEffect(() => {
+    console.log('useEffect triggered - startDate:', startDate, 'endDate:', endDate, 'selectedUserId:', selectedUserId);
     if (startDate && endDate) {
       fetchReportData();
     }
@@ -109,7 +113,11 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
         url += `&user_id=${selectedUserId}`;
       }
       
+      console.log('Fetching report data with URL:', url);
+      console.log('Selected User ID:', selectedUserId, 'Type:', typeof selectedUserId);
+      
       const response = await api.get(url);
+      console.log('API Response:', response.data);
       setReportData(response.data);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch report data');
@@ -267,7 +275,11 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
             <select
               id="user-select"
               value={selectedUserId !== null ? selectedUserId : ''}
-              onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => {
+                const newUserId = e.target.value ? Number(e.target.value) : null;
+                console.log('User dropdown changed:', e.target.value, '-> parsed as:', newUserId);
+                setSelectedUserId(newUserId);
+              }}
               className="border border-gray-300 rounded-md px-3 py-1 text-sm text-gray-900"
               disabled={loadingUsers}
             >

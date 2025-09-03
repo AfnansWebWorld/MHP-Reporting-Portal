@@ -115,5 +115,8 @@ class PDFReport(Base):
     report_date = Column(Date, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     file_size = Column(Integer, nullable=False)  # File size in bytes
+    # New fields to store aggregated payment data
+    total_payment_amount = Column(Float, default=0.0)  # Total payment amount from all reports
+    total_reports_count = Column(Integer, default=0)  # Number of reports in this PDF
     
     user = relationship("User")

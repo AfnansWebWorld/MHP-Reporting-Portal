@@ -43,6 +43,16 @@ export default function Dashboard() {
   const [giveawayAssignments, setGiveawayAssignments] = useState<GiveawayAssignment[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [editingReport, setEditingReport] = useState<Report | null>(null)
+  const [editClient, setEditClient] = useState<Client | null>(null)
+  const [editShift, setEditShift] = useState('')
+  const [editPayment, setEditPayment] = useState(false)
+  const [editPaymentAmount, setEditPaymentAmount] = useState('')
+  const [editPhysicianSample, setEditPhysicianSample] = useState(false)
+  const [editOrderReceived, setEditOrderReceived] = useState(false)
+  const [editGiveawayEnabled, setEditGiveawayEnabled] = useState(false)
+  const [editSelectedGiveaway, setEditSelectedGiveaway] = useState<GiveawayAssignment | null>(null)
+  const [editGiveawayQuantity, setEditGiveawayQuantity] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -177,6 +187,88 @@ export default function Dashboard() {
       setVisitStats(visitStatsRes.data)
     } catch (e: any) {
       setMessage(e.response?.data?.detail || 'Failed to save report')
+    }
+  }
+
+  const startEditReport = (report: Report) => {
+    setEditingReport(report)
+    setEditClient(report.client)
+    setEditShift(report.shift_timing)
+    setEditPayment(report.payment_received)
+    setEditPaymentAmount(report.payment_amount.toString())
+    setEditPhysicianSample(report.physician_sample)
+    setEditOrderReceived(report.order_received)
+    setEditGiveawayEnabled(false)
+    setEditSelectedGiveaway(null)
+    setEditGiveawayQuantity('')
+  }
+
+  const cancelEdit = () => {
+    setEditingReport(null)
+    setEditClient(null)
+    setEditShift('')
+    setEditPayment(false)
+    setEditPaymentAmount('')
+    setEditPhysicianSample(false)
+    setEditOrderReceived(false)
+    setEditGiveawayEnabled(false)
+    setEditSelectedGiveaway(null)
+    setEditGiveawayQuantity('')
+  }
+
+  const updateReport = async () => {
+    if (!editingReport || !editClient) return
+    setMessage('')
+    try {
+      const reportData: any = {
+        client_id: editClient.id,
+        shift_timing: editShift,
+        payment_received: editPayment,
+        payment_amount: editPayment ? parseFloat(editPaymentAmount) || 0 : 0,
+        physician_sample: editPhysicianSample,
+        order_received: editOrderReceived,
+      }
+      
+      if (editGiveawayEnabled && editSelectedGiveaway && editGiveawayQuantity) {
+        reportData.giveaway_usage = {
+          giveaway_assignment_id: editSelectedGiveaway.id,
+          quantity_used: parseInt(editGiveawayQuantity)
+        }
+      }
+      
+      const response = await api.put(`/reports/${editingReport.id}`, reportData)
+      setReports(reports.map(r => r.id === editingReport.id ? response.data : r))
+      
+      // Refresh giveaway assignments if giveaway was used
+      if (editGiveawayEnabled && editSelectedGiveaway && editGiveawayQuantity) {
+        const giveawayRes = await api.get('/giveaways/my-giveaways')
+        setGiveawayAssignments(giveawayRes.data)
+      }
+      
+      setMessage('Report updated successfully!')
+      cancelEdit()
+      
+      setTimeout(() => setMessage(''), 3000)
+    } catch (e: any) {
+      setMessage(e.response?.data?.detail || 'Failed to update report')
+    }
+  }
+
+  const deleteReport = async (reportId: number) => {
+    if (!confirm('Are you sure you want to delete this report?')) return
+    setMessage('')
+    try {
+      await api.delete(`/reports/${reportId}`)
+      setReports(reports.filter(r => r.id !== reportId))
+      setMessage('Report deleted successfully!')
+      
+      // Refresh visit stats
+      const visitStatsRes = await api.get('/visits/stats')
+      setVisitStats(visitStatsRes.data)
+      
+      setTimeout(() => setMessage(''), 3000)
+    } catch (e: any) {
+      setMessage(e.response?.data?.detail || 'Failed to delete report')
     }
   }
 
@@ -383,11 +475,145 @@ export default function Dashboard() {
                 </div>
                 My Daily Calls
               </h2>
+              {/* Edit Form */}
+              {editingReport && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-4">Edit Report</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Client</label>
+                      <select 
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                        value={editClient?.id || ''} 
+                        onChange={(e) => {
+                          const client = clients.find(c => c.id === parseInt(e.target.value))
+                          setEditClient(client || null)
+                        }}
+                      >
+                        <option value="">Select client</option>
+                        {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Shift Timing</label>
+                      <select 
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                        value={editShift} 
+                        onChange={(e) => setEditShift(e.target.value)}
+                      >
+                        <option value="Morning">Morning</option>
+                        <option value="Evening">Evening</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="flex items-center space-x-2">
+                        <input 
+                          type="checkbox" 
+                          checked={editPayment} 
+                          onChange={(e) => setEditPayment(e.target.checked)} 
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Payment Received</span>
+                      </label>
+                      {editPayment && (
+                        <input 
+                          type="number" 
+                          placeholder="Amount" 
+                          className="w-full mt-2 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                          value={editPaymentAmount} 
+                          onChange={(e) => setEditPaymentAmount(e.target.value)} 
+                        />
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <label className="flex items-center space-x-2">
+                        <input 
+                          type="checkbox" 
+                          checked={editPhysicianSample} 
+                          onChange={(e) => setEditPhysicianSample(e.target.checked)} 
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Physician Sample</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input 
+                          type="checkbox" 
+                          checked={editOrderReceived} 
+                          onChange={(e) => setEditOrderReceived(e.target.checked)} 
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Order Received</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input 
+                          type="checkbox" 
+                          checked={editGiveawayEnabled} 
+                          onChange={(e) => setEditGiveawayEnabled(e.target.checked)} 
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Give away</span>
+                      </label>
+                      {editGiveawayEnabled && (
+                        <div className="space-y-3 mt-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Giveaway</label>
+                            <select 
+                              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                              value={editSelectedGiveaway?.id || ''} 
+                              onChange={(e)=>{
+                                const id = parseInt(e.target.value)
+                                const giveaway = giveawayAssignments.find(x=>x.id===id) || null
+                                setEditSelectedGiveaway(giveaway)
+                              }}
+                            >
+                              <option value="">Select a giveaway</option>
+                              {giveawayAssignments.filter(g => g.is_active).map(g => (
+                                <option key={g.id} value={g.id}>
+                                  {g.giveaway?.name} (Available: {g.quantity})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          {editSelectedGiveaway && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Quantity Given</label>
+                              <input 
+                                type="number" 
+                                min="1" 
+                                max={editSelectedGiveaway.quantity}
+                                placeholder="Enter quantity given" 
+                                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                                value={editGiveawayQuantity} 
+                                onChange={(e)=>setEditGiveawayQuantity(e.target.value)} 
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-4">
+                    <button 
+                      onClick={updateReport} 
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
+                    >
+                      Update Report
+                    </button>
+                    <button 
+                      onClick={cancelEdit} 
+                      className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-3 max-h-80 overflow-y-auto mb-6">
                 {reports.map(r => (
                   <div key={r.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition-colors">
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex-1">
                         <p className="font-semibold text-gray-900">{r.client.name}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs text-gray-600 bg-gray-200 px-2 py-1 rounded">
@@ -400,10 +626,40 @@ export default function Dashboard() {
                           }`}>
                             {r.payment_received ? formatCurrency(r.payment_amount || 0) : 'Unpaid'}
                           </span>
+                          {r.physician_sample && (
+                            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                              Sample
+                            </span>
+                          )}
+                          {r.order_received && (
+                            <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                              Order
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div className="text-sm text-gray-600">
-                        {new Date(r.created_at).toLocaleDateString()}
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm text-gray-600">
+                          {new Date(r.created_at).toLocaleDateString()}
+                        </div>
+                        <button 
+                          onClick={() => startEditReport(r)} 
+                          className="p-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-all shadow-sm border border-blue-200"
+                          title="Edit report"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                          </svg>
+                        </button>
+                        <button 
+                          onClick={() => deleteReport(r.id)} 
+                          className="p-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-all shadow-sm border border-red-200"
+                          title="Delete report"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"></path>
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   </div>

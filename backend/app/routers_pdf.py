@@ -46,18 +46,24 @@ def save_my_pdf(db: Session = Depends(get_db), user=Depends(get_current_user)):
     pdf = generate_reports_pdf(user, reports)
     
     try:
+        # Calculate aggregated payment data before deleting reports
+        total_payment_amount = sum(report.payment_amount for report in reports if report.payment_received)
+        total_reports_count = len(reports)
+        
         # Generate dynamic filename with username and current date
         today = datetime.now()
         username = (user.full_name or user.email.split('@')[0]).replace(' ', '')
         filename = f"{username}_{today.strftime('%d_%m_%Y')}.pdf"
         
-        # Save PDF to database
+        # Save PDF to database with aggregated payment data
         pdf_report = models.PDFReport(
             user_id=user.id,
             filename=filename,
             pdf_data=pdf,
             report_date=date.today(),
-            file_size=len(pdf)
+            file_size=len(pdf),
+            total_payment_amount=total_payment_amount,
+            total_reports_count=total_reports_count
         )
         db.add(pdf_report)
         

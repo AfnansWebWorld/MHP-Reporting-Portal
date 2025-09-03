@@ -92,6 +92,123 @@ def list_my_reports(db: Session = Depends(get_db), user=Depends(get_current_user
         .all()
     )
 
+@router.put("/{report_id}", response_model=schemas.ReportOut)
+def update_report(report_id: int, report_in: schemas.ReportCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Update a specific report"""
+    report = db.query(models.Report).filter(
+        models.Report.id == report_id,
+        models.Report.user_id == user.id
+    ).first()
+    
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    # Ensure the client belongs to the current user (unless admin)
+    if user.role == models.Role.admin:
+        client = db.query(models.Client).filter(models.Client.id == report_in.client_id).first()
+    else:
+        client = db.query(models.Client).filter(
+            models.Client.id == report_in.client_id,
+            models.Client.user_id == user.id
+        ).first()
+    
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found or not accessible")
+    
+    # Update report fields
+    report.client_id = report_in.client_id
+    report.shift_timing = report_in.shift_timing
+    report.payment_received = report_in.payment_received
+    report.payment_amount = report_in.payment_amount or 0.0
+    report.physician_sample = report_in.physician_sample or False
+    report.order_received = report_in.order_received or False
+    
+    # Handle giveaway usage if provided
+    if report_in.giveaway_usage:
+        # First, check if there's an existing giveaway usage for this report
+        existing_usage = db.query(models.GiveawayUsage).filter(
+            models.GiveawayUsage.report_id == report.id
+        ).first()
+        
+        # If there's existing usage, restore the quantity to the original assignment
+        if existing_usage:
+            old_assignment = db.query(models.GiveawayAssignment).filter(
+                models.GiveawayAssignment.id == existing_usage.giveaway_assignment_id
+            ).first()
+            if old_assignment:
+                old_assignment.quantity += existing_usage.quantity_used
+                if old_assignment.quantity > 0:
+                    old_assignment.is_active = True
+            db.delete(existing_usage)
+        
+        # Verify the new giveaway assignment belongs to the user and has enough quantity
+        assignment = db.query(models.GiveawayAssignment).filter(
+            and_(
+                models.GiveawayAssignment.id == report_in.giveaway_usage.giveaway_assignment_id,
+                models.GiveawayAssignment.user_id == user.id,
+                models.GiveawayAssignment.is_active == True
+            )
+        ).first()
+        
+        if not assignment:
+            raise HTTPException(status_code=404, detail="Giveaway assignment not found or not accessible")
+        
+        if assignment.quantity < report_in.giveaway_usage.quantity_used:
+            raise HTTPException(status_code=400, detail="Insufficient giveaway quantity available")
+        
+        # Create new giveaway usage record
+        giveaway_usage = models.GiveawayUsage(
+            report_id=report.id,
+            giveaway_assignment_id=report_in.giveaway_usage.giveaway_assignment_id,
+            quantity_used=report_in.giveaway_usage.quantity_used
+        )
+        db.add(giveaway_usage)
+        
+        # Update assignment quantity
+        assignment.quantity -= report_in.giveaway_usage.quantity_used
+        
+        # If quantity reaches 0, mark assignment as inactive
+        if assignment.quantity <= 0:
+            assignment.is_active = False
+    else:
+        # If no giveaway usage provided, remove any existing usage
+        existing_usage = db.query(models.GiveawayUsage).filter(
+            models.GiveawayUsage.report_id == report.id
+        ).first()
+        
+        if existing_usage:
+            # Restore quantity to the assignment
+            old_assignment = db.query(models.GiveawayAssignment).filter(
+                models.GiveawayAssignment.id == existing_usage.giveaway_assignment_id
+            ).first()
+            if old_assignment:
+                old_assignment.quantity += existing_usage.quantity_used
+                if old_assignment.quantity > 0:
+                    old_assignment.is_active = True
+            db.delete(existing_usage)
+    
+    db.commit()
+    db.refresh(report)
+    return report
+
+@router.delete("/{report_id}")
+def delete_report(report_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Delete a specific report"""
+    report = db.query(models.Report).filter(
+        models.Report.id == report_id,
+        models.Report.user_id == user.id
+    ).first()
+    
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    # Delete associated giveaway usage records first
+    db.query(models.GiveawayUsage).filter(models.GiveawayUsage.report_id == report_id).delete()
+    
+    db.delete(report)
+    db.commit()
+    return {"message": "Report deleted successfully"}
+
 @router.delete("/me")
 def clear_my_reports(db: Session = Depends(get_db), user=Depends(get_current_user)):
     """Delete all reports for the current user (not admin records)"""

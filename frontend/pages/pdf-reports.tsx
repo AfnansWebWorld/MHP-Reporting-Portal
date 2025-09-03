@@ -38,8 +38,7 @@ export default function PDFReports() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState<'date' | 'name' | 'size'>('date')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
   const router = useRouter()
 
   useEffect(() => {
@@ -176,26 +175,12 @@ export default function PDFReports() {
     ? pdfReports.filter(report => report.user_email === selectedUser.email)
     : []
 
-  // Filter and sort reports for selected user
+  // Filter reports for selected user (sorted by date, newest first)
   const filteredAndSortedReports = userReports
     .filter(report => 
       report.filename.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .sort((a, b) => {
-      let comparison = 0
-      switch (sortBy) {
-        case 'date':
-          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          break
-        case 'name':
-          comparison = a.filename.localeCompare(b.filename)
-          break
-        case 'size':
-          comparison = a.file_size - b.file_size
-          break
-      }
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   // Filter users based on search
   const filteredUsers = users.filter(user =>
@@ -274,29 +259,7 @@ export default function PDFReports() {
                   </svg>
                 </div>
               </div>
-              <div className="sm:w-48">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'date' | 'name' | 'size')}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
-                >
-                  <option value="date">Date Created</option>
-                  <option value="name">Filename</option>
-                  <option value="size">File Size</option>
-                </select>
-              </div>
-              <div className="sm:w-32">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
-                <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
-                >
-                  <option value="desc">Newest First</option>
-                  <option value="asc">Oldest First</option>
-                </select>
-              </div>
+
             </div>
           </div>
         </div>
