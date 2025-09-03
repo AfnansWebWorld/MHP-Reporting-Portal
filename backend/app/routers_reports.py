@@ -205,6 +205,21 @@ def delete_report(report_id: int, db: Session = Depends(get_db), user=Depends(ge
     # Delete associated giveaway usage records first
     db.query(models.GiveawayUsage).filter(models.GiveawayUsage.report_id == report_id).delete()
     
+    # Decrease daily call count by soft-deleting the most recent active visit for today
+    today = date.today()
+    recent_visit = db.query(models.Visit).filter(
+        and_(
+            models.Visit.user_id == user.id,
+            models.Visit.visit_date == today,
+            models.Visit.is_deleted == False,
+            models.Visit.daily_reset == False
+        )
+    ).order_by(models.Visit.created_at.desc()).first()
+    
+    if recent_visit:
+        recent_visit.is_deleted = True
+        recent_visit.deleted_at = datetime.utcnow()
+    
     db.delete(report)
     db.commit()
     return {"message": "Report deleted successfully"}
@@ -212,6 +227,30 @@ def delete_report(report_id: int, db: Session = Depends(get_db), user=Depends(ge
 @router.delete("/me")
 def clear_my_reports(db: Session = Depends(get_db), user=Depends(get_current_user)):
     """Delete all reports for the current user (not admin records)"""
-    deleted_count = db.query(models.Report).filter(models.Report.user_id == user.id).delete()
+    # Get count of reports to be deleted
+    reports_to_delete = db.query(models.Report).filter(models.Report.user_id == user.id).all()
+    deleted_count = len(reports_to_delete)
+    
+    # Delete associated giveaway usage records first
+    for report in reports_to_delete:
+        db.query(models.GiveawayUsage).filter(models.GiveawayUsage.report_id == report.id).delete()
+    
+    # Decrease daily call count by soft-deleting corresponding number of active visits for today
+    today = date.today()
+    active_visits = db.query(models.Visit).filter(
+        and_(
+            models.Visit.user_id == user.id,
+            models.Visit.visit_date == today,
+            models.Visit.is_deleted == False,
+            models.Visit.daily_reset == False
+        )
+    ).order_by(models.Visit.created_at.desc()).limit(deleted_count).all()
+    
+    for visit in active_visits:
+        visit.is_deleted = True
+        visit.deleted_at = datetime.utcnow()
+    
+    # Delete all reports
+    db.query(models.Report).filter(models.Report.user_id == user.id).delete()
     db.commit()
     return {"message": f"Cleared {deleted_count} reports", "deleted_count": deleted_count}
