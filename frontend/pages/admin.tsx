@@ -382,19 +382,19 @@ export default function Admin() {
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-shrink-0">
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 inline-block">
+                <div className="flex flex-wrap gap-3 sm:gap-4 flex-shrink-0">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 inline-block flex-1 sm:flex-initial">
                     <div className="text-sm text-gray-600">Reports Created</div>
                     <div className="text-2xl font-bold text-gray-900">{u.count ?? '0'}</div>
                   </div>
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 inline-block">
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 inline-block flex-1 sm:flex-initial">
                     <div className="text-sm text-purple-600">Active Clients</div>
                     <div className="text-2xl font-bold text-purple-900">{u.active_clients_count ?? '0'}</div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full sm:w-auto">
                     <button
                       onClick={() => startEditUser(u)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-1"
+                      className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-1"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -403,7 +403,7 @@ export default function Admin() {
                     </button>
                     <button
                       onClick={() => deleteUser(u.id, u.email)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-1"
+                      className="flex-1 sm:flex-initial bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-1"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -514,82 +514,93 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Edit Client Form */}
+        {/* Edit Client Modal */}
         {editingClient && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center">
-                <div className="bg-yellow-50 rounded-lg p-3 mr-4">
-                  <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
-                  </svg>
+          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              {/* Background overlay */}
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={cancelEditClient}></div>
+              
+              {/* Modal panel */}
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center">
+                      <div className="bg-yellow-50 rounded-lg p-3 mr-4">
+                        <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                        </svg>
+                      </div>
+                      <h2 className="text-2xl font-bold text-gray-900">Edit Client</h2>
+                    </div>
+                    <button
+                      onClick={cancelEditClient}
+                      className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Client Name</label>
+                      <input
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Enter client name"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                      <input
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Enter phone number"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                      <input
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Enter address"
+                        value={editAddress}
+                        onChange={(e) => setEditAddress(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200"
+                      onClick={updateClient}
+                    >
+                      Update Client
+                    </button>
+                    <button
+                      className="bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200"
+                      onClick={cancelEditClient}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {clientMessage && (
+                    <div className={`text-sm mt-4 p-3 rounded-lg ${
+                      clientMessage.includes('successfully') 
+                        ? 'text-green-700 bg-green-50 border border-green-200' 
+                        : 'text-red-700 bg-red-50 border border-red-200'
+                    }`}>
+                      {clientMessage}
+                    </div>
+                  )}
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">Edit Client</h2>
-              </div>
-              <button
-                onClick={cancelEditClient}
-                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Client Name</label>
-                <input
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Enter client name"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                <input
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Enter phone number"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                <input
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Enter address"
-                  value={editAddress}
-                  onChange={(e) => setEditAddress(e.target.value)}
-                />
               </div>
             </div>
-
-            <div className="flex gap-3">
-              <button
-                className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200"
-                onClick={updateClient}
-              >
-                Update Client
-              </button>
-              <button
-                className="bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200"
-                onClick={cancelEditClient}
-              >
-                Cancel
-              </button>
-            </div>
-
-            {clientMessage && (
-              <div className={`text-sm mt-4 p-3 rounded-lg ${
-                clientMessage.includes('successfully') 
-                  ? 'text-green-700 bg-green-50 border border-green-200' 
-                  : 'text-red-700 bg-red-50 border border-red-200'
-              }`}>
-                {clientMessage}
-              </div>
-            )}
           </div>
         )}
 
@@ -597,7 +608,7 @@ export default function Admin() {
 
         {/* Client Management List */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div className="flex items-center">
               <div className="bg-orange-50 rounded-lg p-3 mr-4">
                 <svg className="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
@@ -613,7 +624,7 @@ export default function Admin() {
           <div className="divide-y divide-gray-200">
             {clients.map(client => (
               <div key={client.id} className="p-6 hover:bg-gray-50 transition-all duration-200">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                   <div className="flex items-start space-x-4 flex-1">
                     <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
                       <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -652,17 +663,17 @@ export default function Admin() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex gap-2 mt-4 sm:mt-0 sm:ml-4 w-full sm:w-auto">
                     <button
                       onClick={() => startEditClient(client)}
-                      className="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-sm"
+                      className="flex-1 sm:flex-initial bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-sm"
                       title="Edit Client"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => deleteClient(client.id, client.name)}
-                      className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-sm"
+                      className="flex-1 sm:flex-initial bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-sm"
                       title="Delete Client"
                     >
                       Delete
