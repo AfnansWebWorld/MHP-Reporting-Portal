@@ -4,7 +4,7 @@ import Layout from '../components/Layout'
 import { api } from '../lib/api'
 import Cookies from 'js-cookie'
 
-interface User { id: number; email: string; full_name?: string; count?: number; visit_count?: number }
+interface User { id: number; email: string; full_name?: string; count?: number; visit_count?: number; active_clients_count?: number }
 interface CurrentUser { id: number; email: string; full_name?: string; role: string }
 interface Client {
   id: number
@@ -386,6 +386,10 @@ export default function Admin() {
                   <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 inline-block">
                     <div className="text-sm text-gray-600">Reports Created</div>
                     <div className="text-2xl font-bold text-gray-900">{u.count ?? '0'}</div>
+                  </div>
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 inline-block">
+                    <div className="text-sm text-purple-600">Active Clients</div>
+                    <div className="text-2xl font-bold text-purple-900">{u.active_clients_count ?? '0'}</div>
                   </div>
                   <div className="flex gap-2">
                     <button

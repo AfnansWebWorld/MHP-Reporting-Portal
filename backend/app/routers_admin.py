@@ -31,13 +31,23 @@ def list_user_reports(user_id: int, db: Session = Depends(get_db), admin=Depends
 @router.get("/stats")
 def stats(db: Session = Depends(get_db), admin=Depends(require_admin)):
     data = db.query(models.User).all()
+    
+    # Get active clients count for each user
+    user_client_counts = {}
+    for user in data:
+        client_count = db.query(models.Client).filter(
+            models.Client.user_id == user.id
+        ).count()
+        user_client_counts[user.id] = client_count
+    
     return {
         "users": [
             {
                 "id": u.id,
                 "email": u.email,
                 "full_name": u.full_name,
-                "count": u.submissions_count if hasattr(u, 'submissions_count') else len(u.reports)
+                "count": u.submissions_count if hasattr(u, 'submissions_count') else len(u.reports),
+                "active_clients_count": user_client_counts.get(u.id, 0)
             } for u in data
         ]
     }
