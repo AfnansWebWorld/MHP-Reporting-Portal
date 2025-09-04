@@ -46,6 +46,8 @@ export default function Admin() {
   const [editUserName, setEditUserName] = useState('')
   const [editUserPassword, setEditUserPassword] = useState('')
   const [userMessage, setUserMessage] = useState('')
+  const [userSearchTerm, setUserSearchTerm] = useState('')
+  const [clientSearchTerm, setClientSearchTerm] = useState('')
 
 
   const router = useRouter()
@@ -347,12 +349,35 @@ export default function Admin() {
                 <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
               </svg>
             </div>
-            <div className="flex items-center justify-between flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-1 gap-4">
               <h2 className="text-2xl font-bold text-gray-900">System Users</h2>
+              <div className="w-full sm:w-64">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={userSearchTerm}
+                    onChange={(e) => setUserSearchTerm(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 pl-10 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                  />
+                  <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
           <div className="divide-y divide-gray-200">
-            {users.map(u => (
+            {users
+              .filter(u => {
+                if (!userSearchTerm) return true;
+                const searchLower = userSearchTerm.toLowerCase();
+                return (
+                  (u.full_name && u.full_name.toLowerCase().includes(searchLower)) ||
+                  u.email.toLowerCase().includes(searchLower)
+                );
+              })
+              .map(u => (
               <div key={u.id} className="py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 hover:bg-gray-50 transition-all duration-200">
                 <div className="flex items-center space-x-4 flex-1">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
@@ -615,12 +640,40 @@ export default function Admin() {
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Client Management</h2>
             </div>
-            <div className="text-sm text-gray-600">
-              {clients.length} client{clients.length !== 1 ? 's' : ''}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search clients..."
+                  value={clientSearchTerm}
+                  onChange={(e) => setClientSearchTerm(e.target.value)}
+                  className="w-full sm:w-64 border border-gray-300 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <div className="text-sm text-gray-600">
+                {clients.length} client{clients.length !== 1 ? 's' : ''}
+              </div>
             </div>
           </div>
           <div className="divide-y divide-gray-200">
-            {clients.map(client => (
+            {clients
+              .filter(client => {
+                if (!clientSearchTerm) return true;
+                const searchLower = clientSearchTerm.toLowerCase();
+                return (
+                  client.name.toLowerCase().includes(searchLower) ||
+                  (client.phone && client.phone.toLowerCase().includes(searchLower)) ||
+                  (client.address && client.address.toLowerCase().includes(searchLower)) ||
+                  (client.user?.full_name && client.user.full_name.toLowerCase().includes(searchLower)) ||
+                  (client.user?.email && client.user.email.toLowerCase().includes(searchLower))
+                );
+              })
+              .map(client => (
               <div key={client.id} className="p-6 hover:bg-gray-50 transition-all duration-200">
                 <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                   <div className="flex items-start space-x-4 flex-1">

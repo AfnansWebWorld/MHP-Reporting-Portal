@@ -38,6 +38,7 @@ export default function PDFReports() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [reportSearchTerm, setReportSearchTerm] = useState('')
 
   const router = useRouter()
 
@@ -177,9 +178,15 @@ export default function PDFReports() {
 
   // Filter reports for selected user (sorted by date, newest first)
   const filteredAndSortedReports = userReports
-    .filter(report => 
-      report.filename.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter(report => {
+      if (!reportSearchTerm) return true
+      const searchLower = reportSearchTerm.toLowerCase()
+      return (
+        report.filename.toLowerCase().includes(searchLower) ||
+        new Date(report.report_date).toLocaleDateString().toLowerCase().includes(searchLower) ||
+        new Date(report.created_at).toLocaleDateString().toLowerCase().includes(searchLower)
+      )
+    })
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   // Filter users based on search
@@ -342,16 +349,35 @@ export default function PDFReports() {
         {/* Users List or PDF Reports List */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">
-                {selectedUser ? 'Reports List' : 'Users List'}
-              </h2>
-              <span className="text-sm text-gray-500">
-                {selectedUser 
-                  ? `${filteredAndSortedReports.length} of ${userReports.length} reports`
-                  : `${filteredUsers.length} of ${users.length} users`
-                }
-              </span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center justify-between w-full sm:w-auto">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {selectedUser ? 'Reports List' : 'Users List'}
+                </h2>
+                <span className="text-sm text-gray-500 ml-3">
+                  {selectedUser 
+                    ? `${filteredAndSortedReports.length} of ${userReports.length} reports`
+                    : `${filteredUsers.length} of ${users.length} users`
+                  }
+                </span>
+              </div>
+              
+              {selectedUser && (
+                <div className="w-full sm:w-64">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search reports..."
+                      value={reportSearchTerm}
+                      onChange={(e) => setReportSearchTerm(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 pl-10 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                    />
+                    <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           

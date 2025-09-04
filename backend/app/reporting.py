@@ -217,8 +217,11 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> byt
     # Calculate and display total payment amount
     total_payment = sum(r.payment_amount for r in reports if r.payment_received and r.payment_amount > 0)
     
+    # Count the number of "Yes" values in the Order column
+    order_yes_count = sum(1 for r in reports if r.order_received)
+    
     # Check if we need space for the total (need at least 1 inch)
-    if y < 1.5 * inch:
+    if y < 1.8 * inch:  # Increased space needed for both totals
         c.showPage()
         y = height - 1 * inch
     
@@ -233,7 +236,12 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> byt
     c.drawString(5.2 * inch + 0.08 * inch, y - 0.2 * inch, "Total Payment:")
     c.drawString(6.8 * inch + 0.08 * inch, y - 0.2 * inch, format_currency(total_payment))
     
-    # Draw a line below the total
+    # Draw the order count below the total payment
+    y -= 0.4 * inch
+    c.drawString(5.2 * inch + 0.08 * inch, y - 0.2 * inch, "Total Orders:")
+    c.drawString(6.8 * inch + 0.08 * inch, y - 0.2 * inch, str(order_yes_count))
+    
+    # Draw a line below both totals
     c.line(5.2 * inch, y - 0.4 * inch, 8.2 * inch, y - 0.4 * inch)
 
     c.showPage()
