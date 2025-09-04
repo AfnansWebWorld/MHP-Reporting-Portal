@@ -220,9 +220,38 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
     }
   };
 
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  
+  // Check if we're on mobile when component mounts
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Initial check
+    checkIfMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkIfMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
+  
+  // Format labels based on screen size
+  const formatLabel = (day: string, date: string) => {
+    if (isMobile) {
+      // On mobile, just show the day
+      return day;
+    } else {
+      // On desktop, show day and date
+      return `${day} (${date})`;
+    }
+  };
+
   // Prepare chart data for visits
   const visitsChartData: ChartData<'line'> = {
-    labels: reportData?.daily_visits.map(item => `${item.day} (${item.date})`) || [],
+    labels: reportData?.daily_visits.map(item => formatLabel(item.day, item.date)) || [],
     datasets: [
       {
         label: 'Daily Visits',
@@ -236,7 +265,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
 
   // Prepare chart data for recovery amounts
   const recoveryChartData: ChartData<'line'> = {
-    labels: reportData?.daily_recovery.map(item => `${item.day} (${item.date})`) || [],
+    labels: reportData?.daily_recovery.map(item => formatLabel(item.day, item.date)) || [],
     datasets: [
       {
         label: 'Daily Recovery (Rs.)',
@@ -247,12 +276,14 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
       },
     ],
   };
-
+  
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top' as const,
+        display: !isMobile, // Hide legend on mobile
       },
       title: {
         display: false,
@@ -261,6 +292,25 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
     scales: {
       y: {
         beginAtZero: true,
+        ticks: {
+          // Make y-axis ticks more readable on small screens
+          maxRotation: 0,
+          autoSkip: true,
+          font: {
+            size: isMobile ? 10 : 12,
+          },
+        },
+      },
+      x: {
+        ticks: {
+          // Make x-axis labels more readable on small screens
+          maxRotation: 45,
+          minRotation: 45,
+          autoSkip: true,
+          font: {
+            size: isMobile ? 8 : 12,
+          },
+        },
       },
     },
   };
@@ -346,14 +396,14 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ className = '' }) => {
           <div className="space-y-8">
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <h3 className="text-lg font-medium text-gray-800 mb-4">Daily Visit Counts</h3>
-              <div className="h-64">
+              <div className="h-64 w-full overflow-hidden">
                 <Line options={chartOptions} data={visitsChartData} />
               </div>
             </div>
 
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <h3 className="text-lg font-medium text-gray-800 mb-4">Daily Recovery Amounts</h3>
-              <div className="h-64">
+              <div className="h-64 w-full overflow-hidden">
                 <Line options={chartOptions} data={recoveryChartData} />
               </div>
             </div>

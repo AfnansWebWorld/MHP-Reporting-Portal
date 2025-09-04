@@ -275,20 +275,7 @@ export default function Admin() {
               <p className="text-gray-600">Manage users and system settings</p>
             </div>
           </div>
-          <div className="mt-4 sm:mt-0 flex gap-3">
-            <button
-              onClick={() => {
-                Cookies.remove('token')
-                router.push('/login')
-              }}
-              className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Logout
-            </button>
-          </div>
+          {/* Logout button removed as it's already available in the navbar */}
         </div>
 
         {/* Create User Form */}
@@ -434,83 +421,94 @@ export default function Admin() {
           )}
         </div>
 
-        {/* Edit User Form */}
+        {/* Edit User Modal */}
         {editingUser && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center">
-                <div className="bg-yellow-50 rounded-lg p-3 mr-4">
-                  <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
-                  </svg>
+          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              {/* Background overlay */}
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={cancelEditUser}></div>
+              
+              {/* Modal panel */}
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center">
+                      <div className="bg-yellow-50 rounded-lg p-3 mr-4">
+                        <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                        </svg>
+                      </div>
+                      <h2 className="text-2xl font-bold text-gray-900">Edit User</h2>
+                    </div>
+                    <button
+                      onClick={cancelEditUser}
+                      className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                      <input
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Enter email"
+                        value={editUserEmail}
+                        onChange={(e) => setEditUserEmail(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                      <input
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Enter full name"
+                        value={editUserName}
+                        onChange={(e) => setEditUserName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">New Password (optional)</label>
+                      <input
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Leave blank to keep current password"
+                        type="password"
+                        value={editUserPassword}
+                        onChange={(e) => setEditUserPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={updateUser}
+                      className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      Update User
+                    </button>
+                    <button
+                      onClick={cancelEditUser}
+                      className="bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {userMessage && (
+                    <div className={`text-sm mt-4 p-3 rounded-lg ${
+                      userMessage.includes('successfully') 
+                        ? 'text-green-700 bg-green-50 border border-green-200' 
+                        : 'text-red-700 bg-red-50 border border-red-200'
+                    }`}>
+                      {userMessage}
+                    </div>
+                  )}
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">Edit User</h2>
-              </div>
-              <button
-                onClick={cancelEditUser}
-                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Enter email"
-                  value={editUserEmail}
-                  onChange={(e) => setEditUserEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                <input
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Enter full name"
-                  value={editUserName}
-                  onChange={(e) => setEditUserName(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">New Password (optional)</label>
-                <input
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Leave blank to keep current password"
-                  type="password"
-                  value={editUserPassword}
-                  onChange={(e) => setEditUserPassword(e.target.value)}
-                />
               </div>
             </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={updateUser}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                Update User
-              </button>
-              <button
-                onClick={cancelEditUser}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                Cancel
-              </button>
-            </div>
-
-            {userMessage && (
-              <div className={`text-sm mt-4 p-3 rounded-lg ${
-                userMessage.includes('successfully') 
-                  ? 'text-green-700 bg-green-50 border border-green-200' 
-                  : 'text-red-700 bg-red-50 border border-red-200'
-              }`}>
-                {userMessage}
-              </div>
-            )}
           </div>
         )}
 

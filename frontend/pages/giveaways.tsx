@@ -154,18 +154,7 @@ export default function Giveaways() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  Cookies.remove('token')
-                  router.push('/login')
-                }}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-sm"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span>Logout</span>
-              </button>
+              {/* Logout button removed as it's already available in the navbar */}
             </div>
           </div>
 
@@ -248,16 +237,19 @@ export default function Giveaways() {
           {/* Giveaway Assignments List */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
             <div className="border-b border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center">
                   <div className="bg-blue-50 rounded-lg p-2 mr-3">
                     <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                   </div>
-                  📋 Giveaway Assignments
-                </h3>
-                <div className="text-sm text-gray-600">
+                  <h3 className="text-lg font-bold text-gray-900">
+                    <span className="inline-block mr-2">📋</span>
+                    <span>Giveaway Assignments</span>
+                  </h3>
+                </div>
+                <div className="text-sm text-gray-600 ml-10 sm:ml-0">
                   {giveawayAssignments.length} assignment{giveawayAssignments.length !== 1 ? 's' : ''}
                 </div>
               </div>

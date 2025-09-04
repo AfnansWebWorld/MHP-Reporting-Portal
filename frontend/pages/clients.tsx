@@ -195,20 +195,7 @@ export default function Clients() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Client Management</h1>
             <p className="text-gray-600">Manage your clients and their information</p>
           </div>
-          <div className="mt-4 sm:mt-0">
-            <button
-              onClick={() => {
-                Cookies.remove('token')
-                router.push('/login')
-              }}
-              className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Logout
-            </button>
-          </div>
+          {/* Logout button removed as it's already available in the navbar */}
         </div>
 
         {/* Add Client Form */}

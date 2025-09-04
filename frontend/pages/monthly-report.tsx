@@ -83,18 +83,7 @@ export default function MonthlyReportPage() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  Cookies.remove('token')
-                  router.push('/login')
-                }}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-sm"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span>Logout</span>
-              </button>
+              {/* Logout button removed as it's already available in the navbar */}
             </div>
           </div>
 
