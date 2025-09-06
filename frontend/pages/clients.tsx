@@ -232,7 +232,7 @@ export default function Clients() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Client Name *</label>
                   <input
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     placeholder="Enter client name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}

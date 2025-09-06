@@ -3,10 +3,11 @@ from fastapi import APIRouter, Depends, Response, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import date, datetime
+from typing import Optional
 from . import models
-from .auth import get_current_user, require_admin
+from .auth import get_current_user, require_admin, check_outstation_access
 from .database import get_db
-from .reporting import generate_reports_pdf
+from .reporting import generate_reports_pdf, generate_outstation_expense_pdf
 
 router = APIRouter(prefix="/pdf", tags=["pdf"]) 
 
@@ -93,6 +94,142 @@ def save_my_pdf(db: Session = Depends(get_db), user=Depends(get_current_user)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     return {"status": "saved", "filename": filename}
+
+# Out Station Expense PDF endpoints
+@router.get("/outstation", response_class=Response)
+def get_outstation_expense_pdf(
+    month: Optional[str] = None,
+    db: Session = Depends(get_db), 
+    user=Depends(check_outstation_access)
+):
+    """Generate PDF for out station expenses"""
+    query = db.query(models.OutStationExpense).filter(models.OutStationExpense.user_id == user.id)
+    
+    # Filter by month if provided
+    if month:
+        query = query.filter(models.OutStationExpense.month == month)
+    
+    # Order by day of month
+    expenses = query.order_by(models.OutStationExpense.day_of_month).all()
+    
+    if not expenses:
+        raise HTTPException(status_code=404, detail="No out station expense reports found")
+    
+    pdf = generate_outstation_expense_pdf(user, expenses)
+    
+    # Generate dynamic filename with username and month
+    month_str = month or expenses[0].month
+    username = (user.full_name or user.email.split('@')[0]).replace(' ', '')
+    filename = f"{username}_OutStation_{month_str.replace(' ', '_')}.pdf"
+    
+    headers = {"Content-Disposition": f"attachment; filename={filename}"}
+    return Response(content=pdf, media_type="application/pdf", headers=headers)
+
+
+@router.post("/outstation/save")
+def save_outstation_expense_pdf(
+    month: Optional[str] = None,
+    db: Session = Depends(get_db), 
+    user=Depends(check_outstation_access)
+):
+    """Save PDF for out station expenses to database"""
+    query = db.query(models.OutStationExpense).filter(models.OutStationExpense.user_id == user.id)
+    
+    # Filter by month if provided
+    if month:
+        query = query.filter(models.OutStationExpense.month == month)
+    
+    # Order by day of month
+    expenses = query.order_by(models.OutStationExpense.day_of_month).all()
+    
+    if not expenses:
+        raise HTTPException(status_code=404, detail="No out station expense reports found")
+    
+    pdf = generate_outstation_expense_pdf(user, expenses)
+    
+    try:
+        # Generate dynamic filename with username and month
+        month_str = month or expenses[0].month
+        username = (user.full_name or user.email.split('@')[0]).replace(' ', '')
+        filename = f"{username}_OutStation_{month_str.replace(' ', '_')}.pdf"
+        
+        # Save PDF to database
+        pdf_report = models.PDFReport(
+            user_id=user.id,
+            filename=filename,
+            pdf_data=pdf,
+            report_date=date.today(),
+            file_size=len(pdf),
+            report_type="outstation"
+        )
+        db.add(pdf_report)
+        db.commit()
+        db.refresh(pdf_report)
+        
+        # Update all expense records with the pdf_report_id
+        for expense in expenses:
+            expense.pdf_report_id = pdf_report.id
+        db.commit()
+        
+        return {"status": "saved", "filename": filename}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/outstation/{pdf_id}", response_class=Response)
+def get_outstation_pdf(pdf_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Download a specific outstation PDF report by ID"""
+    pdf_report = db.query(models.PDFReport).filter(
+        models.PDFReport.id == pdf_id,
+        models.PDFReport.report_type == "outstation"
+    ).first()
+    
+    if not pdf_report:
+        raise HTTPException(status_code=404, detail="PDF report not found")
+    
+    # Check if user has access to this PDF (either it's their own or they're an admin)
+    if pdf_report.user_id != user.id and user.role != models.Role.admin:
+        raise HTTPException(status_code=403, detail="You don't have permission to access this PDF")
+    
+    headers = {"Content-Disposition": f"attachment; filename={pdf_report.filename}"}
+    return Response(content=pdf_report.pdf_data, media_type="application/pdf", headers=headers)
+
+@router.get("/admin/outstation/{user_id}")
+def admin_get_user_outstation_pdf(
+    user_id: int,
+    month: Optional[str] = None,
+    db: Session = Depends(get_db), 
+    admin=Depends(require_admin)
+):
+    """Admin endpoint to get a user's out station expense PDF"""
+    # Check if user exists
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    query = db.query(models.OutStationExpense).filter(models.OutStationExpense.user_id == user_id)
+    
+    # Filter by month if provided
+    if month:
+        query = query.filter(models.OutStationExpense.month == month)
+    
+    # Order by day of month
+    expenses = query.order_by(models.OutStationExpense.day_of_month).all()
+    
+    if not expenses:
+        raise HTTPException(status_code=404, detail="No out station expense reports found for this user")
+    
+    pdf = generate_outstation_expense_pdf(user, expenses)
+    
+    # Generate dynamic filename with username and month
+    month_str = month or expenses[0].month
+    username = (user.full_name or user.email.split('@')[0]).replace(' ', '')
+    filename = f"{username}_OutStation_{month_str.replace(' ', '_')}.pdf"
+    
+    headers = {"Content-Disposition": f"attachment; filename={filename}"}
+    return Response(content=pdf, media_type="application/pdf", headers=headers)
+
 
 # Admin endpoints for managing saved PDFs
 @router.get("/admin/all")

@@ -99,7 +99,7 @@ export default function Login() {
                     </svg>
                   </div>
                   <input 
-                    className="w-full bg-white border border-gray-300 rounded-xl pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400" 
+                    className="w-full bg-white border border-gray-300 rounded-xl pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 text-sm sm:text-base text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400" 
                     type="email" 
                     value={email} 
                     onChange={(e)=>setEmail(e.target.value)} 
@@ -119,7 +119,7 @@ export default function Login() {
                     </svg>
                   </div>
                   <input 
-                    className="w-full bg-white border border-gray-300 rounded-xl pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400" 
+                    className="w-full bg-white border border-gray-300 rounded-xl pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 text-sm sm:text-base text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400" 
                     type="password" 
                     value={password} 
                     onChange={(e)=>setPassword(e.target.value)} 

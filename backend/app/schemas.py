@@ -6,11 +6,21 @@ from enum import Enum
 class Role(str, Enum):
     admin = "admin"
     user = "user"
+    
+class StationType(str, Enum):
+    base_station = "Base Station"
+    ex = "Ex."
+    night_stay = "Night Stay"
+    
+class TravellingType(str, Enum):
+    one_way = "1-way"
+    two_way = "2-way"
 
 class UserBase(BaseModel):
     email: str
     full_name: Optional[str] = None
     role: Role = Role.user
+    has_outstation_access: Optional[bool] = False
 
 class UserCreate(UserBase):
     password: str
@@ -24,6 +34,7 @@ class UserOut(UserBase):
     id: int
     is_active: bool
     submissions_count: Optional[int] = 0
+    has_outstation_access: bool = False
 
     class Config:
         from_attributes = True
@@ -148,6 +159,39 @@ class GiveawayAssignmentOut(GiveawayAssignmentBase):
     assigned_by: int
     assigned_at: datetime
     is_active: bool
+    
+    class Config:
+        from_attributes = True
+        
+# Out Station Expense schemas
+class OutStationExpenseBase(BaseModel):
+    day: date
+    station: StationType
+    travelling: TravellingType
+    km_travelled: float
+    csr_verified: str
+    summary_of_activity: str
+
+class OutStationExpenseCreate(OutStationExpenseBase):
+    pass
+
+class OutStationExpenseOut(OutStationExpenseBase):
+    id: int
+    user_id: int
+    day_of_month: int
+    month: str
+    created_at: datetime
+    pdf_report_id: Optional[int] = None
+    
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            date: lambda v: v.isoformat()
+        }
+
+class OutStationExpensePermissionUpdate(BaseModel):
+    user_id: int
+    has_outstation_access: bool
     user: Optional['UserOut'] = None
     giveaway: Optional['GiveawayOut'] = None
     admin: Optional['UserOut'] = None

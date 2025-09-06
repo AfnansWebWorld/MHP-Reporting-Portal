@@ -8,6 +8,15 @@ class Role(enum.Enum):
     admin = "admin"
     user = "user"
 
+class StationType(enum.Enum):
+    base_station = "Base Station"
+    ex = "Ex."
+    night_stay = "Night Stay"
+    
+class TravellingType(enum.Enum):
+    one_way = "1-way"
+    two_way = "2-way"
+
 class User(Base):
     __tablename__ = "users"
 
@@ -18,9 +27,11 @@ class User(Base):
     role = Column(Enum(Role), default=Role.user, nullable=False)
     is_active = Column(Boolean, default=True)
     submissions_count = Column(Integer, default=0)
+    has_outstation_access = Column(Boolean, default=False)  # Permission for Out Station Expense feature
     reports = relationship("Report", back_populates="user")
     visits = relationship("Visit", back_populates="user")
     clients = relationship("Client", back_populates="user")
+    outstation_expenses = relationship("OutStationExpense", back_populates="user")
 
 class Client(Base):
     __tablename__ = "clients"
@@ -118,5 +129,25 @@ class PDFReport(Base):
     # New fields to store aggregated payment data
     total_payment_amount = Column(Float, default=0.0)  # Total payment amount from all reports
     total_reports_count = Column(Integer, default=0)  # Number of reports in this PDF
+    report_type = Column(String, default="regular")  # "regular" or "outstation"
     
     user = relationship("User")
+
+class OutStationExpense(Base):
+    __tablename__ = "outstation_expenses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    day = Column(Date, default=date.today, nullable=False)
+    day_of_month = Column(Integer, nullable=False)  # Day number in the month (1-31)
+    month = Column(String, nullable=False)  # Format: YYYY-MM
+    station = Column(Enum(StationType), nullable=False)
+    travelling = Column(Enum(TravellingType), nullable=False)
+    km_travelled = Column(Float, nullable=False)
+    csr_verified = Column(String, nullable=False)
+    summary_of_activity = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("User", back_populates="outstation_expenses")
+    pdf_report_id = Column(Integer, ForeignKey("pdf_reports.id"), nullable=True)
+    pdf_report = relationship("PDFReport")

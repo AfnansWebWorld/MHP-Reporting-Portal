@@ -9,6 +9,7 @@ interface User {
   email: string
   full_name?: string
   role: string
+  has_outstation_access?: boolean
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -109,12 +110,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               Dashboard
             </Link>
           )}
+          {user?.role === 'admin' && (
+            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/admin-outstation">
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Out Station Management
+            </Link>
+          )}
           {user?.role !== 'admin' && (
             <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/clients">
               <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
               </svg>
               Clients
+            </Link>
+          )}
+          {user?.has_outstation_access && (
+            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/outstation-expense">
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+              </svg>
+              Out Station Expense
             </Link>
           )}
           {user?.role === 'admin' && (
@@ -246,6 +263,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               )}
               
+              {user?.has_outstation_access && (
+                <Link 
+                  href="/outstation-expense" 
+                  className="group flex items-center px-4 py-3 rounded-xl text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">🚗</span>
+                  <span className="font-medium">Out Station Expense</span>
+                </Link>
+              )}
+              
               {user?.role === 'admin' && (
                 <Link 
                   href="/admin" 
@@ -287,6 +315,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">📄</span>
                   <span className="font-medium">PDF Reports</span>
+                </Link>
+              )}
+              
+              {user?.role === 'admin' && (
+                <Link 
+                  href="/admin-outstation" 
+                  className="group flex items-center px-4 py-3 rounded-xl text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">🚗</span>
+                  <span className="font-medium">Out Station Management</span>
                 </Link>
               )}
               

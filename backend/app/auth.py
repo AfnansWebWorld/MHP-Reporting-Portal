@@ -57,3 +57,26 @@ def require_admin(user: models.User = Depends(get_current_user)):
     if user.role.value != "admin":
         raise HTTPException(status_code=403, detail="Admin privileges required")
     return user
+
+
+def get_current_active_user(user: models.User = Depends(get_current_user)):
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return user
+
+
+def get_current_admin_user(user: models.User = Depends(get_current_user)):
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    if user.role.value != "admin":
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    return user
+
+
+def check_outstation_access(user: models.User = Depends(get_current_active_user)):
+    if not user.has_outstation_access:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to Out Station Expense feature"
+        )
+    return user

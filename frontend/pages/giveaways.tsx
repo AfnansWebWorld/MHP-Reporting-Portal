@@ -175,7 +175,7 @@ export default function Giveaways() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Giveaway</label>
                   <select
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                     value={selectedGiveaway}
                     onChange={(e) => setSelectedGiveaway(e.target.value)}
                   >
@@ -190,7 +190,7 @@ export default function Giveaways() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">User</label>
                   <select
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                     value={selectedUser}
                     onChange={(e) => setSelectedUser(e.target.value)}
                   >

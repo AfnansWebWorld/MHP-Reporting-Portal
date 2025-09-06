@@ -294,7 +294,7 @@ export default function Admin() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
               <input 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
                 placeholder="Enter email address" 
                 value={email} 
                 onChange={(e)=>setEmail(e.target.value)} 
@@ -303,7 +303,7 @@ export default function Admin() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
               <input 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
                 placeholder="Enter full name" 
                 value={name} 
                 onChange={(e)=>setName(e.target.value)} 
@@ -312,7 +312,7 @@ export default function Admin() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
               <input 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
                 placeholder="Enter password" 
                 type="password" 
                 value={password} 

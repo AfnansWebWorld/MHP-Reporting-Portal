@@ -13,6 +13,28 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 def list_users(db: Session = Depends(get_db), admin=Depends(require_admin)):
     return db.query(models.User).all()
 
+
+@router.put("/users/{user_id}/outstation-access")
+def update_user_outstation_access(
+    user_id: int, 
+    permission: schemas.OutStationExpensePermissionUpdate,
+    db: Session = Depends(get_db), 
+    admin=Depends(require_admin)
+):
+    """Update a user's outstation expense access permission"""
+    if permission.user_id != user_id:
+        raise HTTPException(status_code=400, detail="User ID mismatch")
+        
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.has_outstation_access = permission.has_outstation_access
+    db.commit()
+    db.refresh(user)
+    
+    return {"id": user.id, "email": user.email, "has_outstation_access": user.has_outstation_access}
+
 @router.get("/users/list")
 def get_users_list(db: Session = Depends(get_db), admin=Depends(require_admin)):
     """Get a simplified list of users for dropdown menus"""
@@ -47,7 +69,8 @@ def stats(db: Session = Depends(get_db), admin=Depends(require_admin)):
                 "email": u.email,
                 "full_name": u.full_name,
                 "count": u.submissions_count if hasattr(u, 'submissions_count') else len(u.reports),
-                "active_clients_count": user_client_counts.get(u.id, 0)
+                "active_clients_count": user_client_counts.get(u.id, 0),
+                "has_outstation_access": u.has_outstation_access
             } for u in data
         ]
     }
@@ -60,6 +83,60 @@ def list_all_reports(db: Session = Depends(get_db), admin=Depends(require_admin)
         .order_by(models.Report.created_at.desc())
         .all()
     )
+
+@router.get("/outstation-expenses")
+def get_outstation_expenses(
+    user_id: Optional[int] = Query(None, description="Filter by specific user ID"),
+    month: Optional[str] = Query(None, description="Filter by month (e.g., 'January 2023')"),
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Get all outstation expenses for admin dashboard"""
+    query = db.query(models.OutStationExpense)
+    
+    # Apply filters if provided
+    if user_id is not None:
+        query = query.filter(models.OutStationExpense.user_id == user_id)
+    
+    if month is not None:
+        query = query.filter(models.OutStationExpense.month == month)
+    
+    # Get all expenses ordered by user, month, and day
+    expenses = query.order_by(
+        models.OutStationExpense.user_id,
+        models.OutStationExpense.month,
+        models.OutStationExpense.day_of_month
+    ).all()
+    
+    # Get user information for each expense
+    result = []
+    for expense in expenses:
+        user = db.query(models.User).filter(models.User.id == expense.user_id).first()
+        result.append({
+            "id": expense.id,
+            "user_id": expense.user_id,
+            "user_name": user.full_name if user else "Unknown",
+            "day": expense.day.isoformat(),
+            "day_of_month": expense.day_of_month,
+            "month": expense.month,
+            "station": expense.station.value,
+            "travelling": expense.travelling.value,
+            "km_travelled": expense.km_travelled,
+            "csr_verified": expense.csr_verified,
+            "summary_of_activity": expense.summary_of_activity,
+            "created_at": expense.created_at.isoformat(),
+            "pdf_report_id": expense.pdf_report_id
+        })
+    
+    return result
+
+
+@router.get("/outstation-months")
+def get_outstation_months(db: Session = Depends(get_db), admin=Depends(require_admin)):
+    """Get all available months for outstation expenses"""
+    months = db.query(models.OutStationExpense.month).distinct().all()
+    return [month[0] for month in months]
+
 
 @router.get("/monthly-report")
 def get_monthly_report(

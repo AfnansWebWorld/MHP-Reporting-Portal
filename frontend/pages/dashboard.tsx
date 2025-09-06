@@ -357,7 +357,7 @@ export default function Dashboard() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Client Name</label>
-                  <select className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" value={selectedClient?.id || ''} onChange={(e)=>{
+                  <select className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" value={selectedClient?.id || ''} onChange={(e)=>{
                     const id = parseInt(e.target.value)
                     const c = clients.find(x=>x.id===id) || null
                     setSelectedClient(c)
@@ -379,7 +379,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Shift Timing</label>
-                    <select className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" value={shift} onChange={(e)=>setShift(e.target.value)}>
+                    <select className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" value={shift} onChange={(e)=>setShift(e.target.value)}>
                       <option>Morning</option>
                       <option>Evening</option>
                     </select>

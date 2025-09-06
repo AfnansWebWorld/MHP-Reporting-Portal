@@ -4,6 +4,7 @@ from datetime import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
+from reportlab.lib import colors
 from . import models
 
 
@@ -13,6 +14,220 @@ def format_currency(amount: float) -> str:
         return f"Rs. {int(amount):,}"
     else:
         return f"Rs. {amount:,.2f}"
+
+
+def generate_outstation_expense_pdf(user: models.User, expenses: List[models.OutStationExpense]) -> bytes:
+    """Generate a PDF report for Out Station Expenses"""
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+
+    # Add current date with day
+    current_date = datetime.now()
+    date_str = current_date.strftime("%A, %B %d, %Y")
+    
+    # Add title with improved styling
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(1 * inch, height - 0.7 * inch, f"Out Station Expense Report - {user.full_name or user.email}")
+    
+    # Add date with improved styling
+    c.setFont("Helvetica", 12)
+    c.drawString(1 * inch, height - 1 * inch, f"Date: {date_str}")
+
+    # Add month if expenses exist with improved styling
+    if expenses and len(expenses) > 0:
+        c.drawString(1 * inch, height - 1.3 * inch, f"Month: {expenses[0].month}")
+
+    # Add a decorative line under the header
+    c.setStrokeColorRGB(0.8, 0.8, 0.8)
+    c.setLineWidth(1)
+    c.line(1 * inch, height - 1.5 * inch, 7.5 * inch, height - 1.5 * inch)
+    c.setStrokeColorRGB(0, 0, 0)  # Reset to black
+    c.setLineWidth(0.5)  # Reset line width
+    
+    c.setFont("Helvetica-Bold", 10)
+    y = height - 1.8 * inch
+
+    headers = ["Day", "Station", "Travelling", "KM Travelled", "CSR Verified", "Summary"]
+    col_x = [0.50*inch, 1.0*inch, 2.5*inch, 3.5*inch, 4.6*inch, 5.8*inch]
+    col_widths = [0.5*inch, 1.25*inch, 1.2*inch, 1.2*inch, 1.2*inch, 2.6*inch]
+
+    # Draw header background and text (bold)
+    header_y = y
+    c.setFont("Helvetica-Bold", 10)
+    for i, h in enumerate(headers):
+        c.drawString(col_x[i] + 0.08 * inch, y, h)
+    
+    # Reset font to regular for data rows
+    c.setFont("Helvetica", 10)
+    
+    # Draw header borders with improved styling
+    y -= 0.2 * inch
+    c.setLineWidth(0.8)  # Thicker line for header bottom
+    c.line(0.25*inch, y, 8.2*inch, y)  # Bottom line of header
+    c.line(0.25*inch, header_y + 0.15*inch, 8.2*inch, header_y + 0.15*inch)  # Top line of header
+    c.setLineWidth(0.5)  # Reset line width
+    
+    # Draw vertical lines for header borders - proper table structure
+    c.line(0.25*inch, header_y + 0.15*inch, 0.25*inch, y)  # Left border
+    for i in range(1, len(col_x)):
+        c.line(col_x[i], header_y + 0.15*inch, col_x[i], y)  # Column separators
+    c.line(8.2*inch, header_y + 0.15*inch, 8.2*inch, y)  # Right border
+    
+    # Store initial position for table continuity
+    table_start_y = y
+    
+    y -= 0.15 * inch
+
+    # Sort expenses by day_of_month
+    sorted_expenses = sorted(expenses, key=lambda x: x.day_of_month)
+
+    for idx, expense in enumerate(sorted_expenses):
+        # Check if we need a new page
+        if y < 1.2*inch:
+            # Before starting a new page, draw vertical lines to the bottom of the current page
+            bottom_of_page = 1*inch
+            c.line(0.25*inch, y + 0.15*inch, 0.25*inch, bottom_of_page)  # Left border
+            for i in range(1, len(col_x)):
+                c.line(col_x[i], y + 0.15*inch, col_x[i], bottom_of_page)
+            c.line(8.2*inch, y + 0.15*inch, 8.2*inch, bottom_of_page)  # Right border
+            
+            c.showPage()
+            y = height - 1*inch
+            
+            # Add a small page indicator
+            c.setFont("Helvetica", 8)
+            c.drawString(7.5 * inch, height - 0.5 * inch, f"Page {c.getPageNumber()}")
+            
+            # Redraw headers on new page with improved styling
+            c.setFont("Helvetica-Bold", 10)
+            header_y = y
+            for i, h in enumerate(headers):
+                c.drawString(col_x[i] + 0.08 * inch, y, h)
+            
+            c.setFont("Helvetica", 10)
+            y -= 0.2 * inch
+            
+            # Draw header borders with improved styling
+            c.setLineWidth(0.8)  # Thicker line for header bottom
+            c.line(0.25*inch, y, 8.2*inch, y)  # Bottom line of header
+            c.line(0.25*inch, header_y + 0.15*inch, 8.2*inch, header_y + 0.15*inch)  # Top line of header
+            c.setLineWidth(0.5)  # Reset line width
+            
+            # Draw vertical lines for header borders - proper table structure
+            c.line(0.25*inch, header_y + 0.15*inch, 0.25*inch, y)  # Left border
+            for i in range(1, len(col_x)):
+                c.line(col_x[i], header_y + 0.15*inch, col_x[i], y)  # Column separators
+            c.line(8.2*inch, header_y + 0.15*inch, 8.2*inch, y)  # Right border
+            
+            # Continue table on new page
+            
+            y -= 0.15 * inch
+        
+        # Add minimal left padding for text positioning
+        text_padding = 0.08 * inch
+        
+        # Draw row data
+        # Day
+        c.drawString(col_x[0] + text_padding, y, str(expense.day_of_month))
+        
+        # Station
+        c.drawString(col_x[1] + text_padding, y, expense.station.value)
+        
+        # Travelling
+        c.drawString(col_x[2] + text_padding, y, expense.travelling.value)
+        
+        # KM Travelled
+        c.drawString(col_x[3] + text_padding, y, str(expense.km_travelled))
+        
+        # CSR Verified
+        c.drawString(col_x[4] + text_padding, y, expense.csr_verified)
+        
+        # Summary of Activity - Handle multi-line text
+        summary_text = expense.summary_of_activity
+        max_chars_per_line = 30  # Adjust based on column width
+        
+        summary_lines = []
+        if len(summary_text) > max_chars_per_line:
+            words = summary_text.split()
+            current_line = ""
+            lines = []
+            
+            for word in words:
+                test_line = current_line + (" " if current_line else "") + word
+                if len(test_line) <= max_chars_per_line:
+                    current_line = test_line
+                else:
+                    if current_line:
+                        lines.append(current_line)
+                    current_line = word
+            
+            if current_line:
+                lines.append(current_line)
+            
+            summary_lines = lines
+        else:
+            summary_lines = [summary_text]
+        
+        # Calculate row height based on summary lines (similar to generate_reports_pdf)
+        max_lines = len(summary_lines)
+        row_height = max(0.25 * inch, 0.22 * inch * max_lines)
+        
+        # Draw summary text (potentially multi-line)
+        for i, line in enumerate(summary_lines):
+            c.drawString(col_x[5] + text_padding, y - (i * 0.15 * inch), line)
+        
+        # Draw cell borders for this row (matching generate_reports_pdf)
+        row_top = y + 0.15*inch
+        row_bottom = y - max(row_height, 0.25 * inch) + 0.15*inch
+        
+        # Draw horizontal lines (bottom of row)
+        c.line(0.25*inch, row_bottom, 8.2*inch, row_bottom)
+        
+        # Draw vertical lines for each column
+        c.line(0.25*inch, row_top, 0.25*inch, row_bottom)  # Left border
+        for i in range(1, len(col_x)):
+            c.line(col_x[i], row_top, col_x[i], row_bottom)  # Column separators
+        c.line(8.2*inch, row_top, 8.2*inch, row_bottom)  # Right border
+        
+        # Update y position
+        y -= max(row_height, 0.25 * inch)
+        
+        # Check if we need a new page for the next row
+        if y <= 1.2*inch and idx < len(sorted_expenses) - 1:
+            # Draw vertical lines to bottom of page for table continuity
+            bottom_of_page = 1*inch
+            c.line(0.25*inch, y + 0.15*inch, 0.25*inch, bottom_of_page)  # Left border
+            for i in range(1, len(col_x)):
+                c.line(col_x[i], y + 0.15*inch, col_x[i], bottom_of_page)
+            c.line(8.2*inch, y + 0.15*inch, 8.2*inch, bottom_of_page)  # Right border
+
+    # Add total KM travelled with improved styling
+    total_km = sum(expense.km_travelled for expense in expenses)
+    y -= 0.3 * inch
+    
+    # Draw a box for the total
+    c.setFillColorRGB(0.95, 0.95, 0.95)  # Light gray background
+    c.rect(0.25*inch, y - 0.15*inch, 3*inch, 0.25*inch, fill=1)
+    c.setFillColorRGB(0, 0, 0)  # Reset to black
+    
+    # Add total text with improved styling
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(0.35*inch, y, f"Total KM Travelled: {total_km}")
+    
+    # Add footer with date generated
+    c.setFont("Helvetica", 8)
+    footer_text = f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    c.drawString(0.25*inch, 0.5*inch, footer_text)
+    
+    # Add page number on last page too
+    c.drawString(7.5 * inch, 0.5 * inch, f"Page {c.getPageNumber()}")
+
+    c.showPage()
+    c.save()
+    pdf_data = buffer.getvalue()
+    buffer.close()
+    return pdf_data
 
 
 def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> bytes:
