@@ -39,6 +39,10 @@ from sqlalchemy.orm import Session
 
 @app.on_event("startup")
 def on_startup():
+    # Run migrations first
+    from .migrate import run_migrations
+    run_migrations()
+    
     # Create a temporary session
     from .database import SessionLocal
     db: Session = SessionLocal()
