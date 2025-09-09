@@ -56,11 +56,41 @@ def stats(db: Session = Depends(get_db), admin=Depends(require_admin)):
     
     # Get active clients count for each user
     user_client_counts = {}
+    # Get monthly recovery amount for each user
+    user_monthly_recovery = {}
+    
+    # Get current month's date range
+    today = date.today()
+    start_date = date(today.year, today.month, 1)
+    next_month = date(today.year + (today.month // 12), ((today.month % 12) + 1) or 12, 1)
+    end_date = next_month - timedelta(days=1)
+    
     for user in data:
+        # Count active clients
         client_count = db.query(models.Client).filter(
             models.Client.user_id == user.id
         ).count()
         user_client_counts[user.id] = client_count
+        
+        # Calculate monthly recovery for current month
+        # Get recovery from active reports
+        active_reports_recovery = db.query(func.sum(models.Report.payment_amount)).filter(
+            models.Report.user_id == user.id,
+            models.Report.payment_received == True,
+            models.Report.created_at >= start_date,
+            models.Report.created_at <= end_date
+        ).scalar() or 0
+        
+        # Get recovery from submitted PDF reports
+        pdf_recovery = db.query(func.sum(models.PDFReport.total_payment_amount)).filter(
+            models.PDFReport.user_id == user.id,
+            models.PDFReport.created_at >= start_date,
+            models.PDFReport.created_at <= end_date,
+            models.PDFReport.total_payment_amount > 0
+        ).scalar() or 0
+        
+        # Total monthly recovery
+        user_monthly_recovery[user.id] = active_reports_recovery + pdf_recovery
     
     return {
         "users": [
@@ -70,6 +100,7 @@ def stats(db: Session = Depends(get_db), admin=Depends(require_admin)):
                 "full_name": u.full_name,
                 "count": u.submissions_count if hasattr(u, 'submissions_count') else len(u.reports),
                 "active_clients_count": user_client_counts.get(u.id, 0),
+                "monthly_recovery": user_monthly_recovery.get(u.id, 0),
                 "has_outstation_access": u.has_outstation_access
             } for u in data
         ]
