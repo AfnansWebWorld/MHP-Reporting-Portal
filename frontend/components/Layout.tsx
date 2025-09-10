@@ -99,8 +99,68 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 px-4 py-6 space-y-2">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Navigation</div>
           
+          {/* Admin Links First */}
+          {user?.role === 'admin' && (
+            <>
+              <Link 
+                className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/admin' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
+                href="/admin"
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Admin
+              </Link>
+              
+              <Link 
+                className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/admin-outstation' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
+                href="/admin-outstation"
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Out Station Management
+              </Link>
+              
+              <Link 
+                className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/monthly-report' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
+                href="/monthly-report"
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Monthly Activity Report
+              </Link>
+              
+              <Link 
+                className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/pdf-reports' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
+                href="/pdf-reports"
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                PDF Reports
+              </Link>
+              
+              <Link 
+                className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/giveaways' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
+                href="/giveaways"
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                </svg>
+                Giveaways
+              </Link>
+            </>
+          )}
+          
+          {/* Non-Admin Links */}
           {user?.role !== 'admin' && (
-            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/dashboard">
+            <Link 
+              className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/dashboard' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
+              href="/dashboard"
+            >
               <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z" />
@@ -108,61 +168,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               Dashboard
             </Link>
           )}
-          {user?.role === 'admin' && (
-            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/admin-outstation">
-              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              Out Station Management
-            </Link>
-          )}
+          
           {user?.role !== 'admin' && (
-            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/clients">
+            <Link 
+              className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/clients' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
+              href="/clients"
+            >
               <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
               </svg>
               Clients
             </Link>
           )}
+          
           {user?.has_outstation_access && (
-            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/outstation-expense">
+            <Link 
+              className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/outstation-expense' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
+              href="/outstation-expense"
+            >
               <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
               </svg>
               Out Station Expense
-            </Link>
-          )}
-          {user?.role === 'admin' && (
-            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/admin">
-              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Admin
-            </Link>
-          )}
-          {user?.role === 'admin' && (
-            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/monthly-report">
-              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Monthly Activity Report
-            </Link>
-          )}
-          {user?.role === 'admin' && (
-            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/pdf-reports">
-              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              PDF Reports
-            </Link>
-          )}
-          {user?.role === 'admin' && (
-            <Link className="flex items-center px-3 py-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200" href="/giveaways">
-              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-              </svg>
-              Giveaways
             </Link>
           )}
         </nav>
@@ -236,11 +263,61 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
               
-              {/* Mobile Navigation Links */}
+              {/* Mobile Navigation Links - Admin Links First */}
+              {user?.role === 'admin' && (
+                <>
+                  <Link 
+                    href="/admin" 
+                    className={`group flex items-center px-4 py-3 rounded-xl ${router.pathname === '/admin' ? 'bg-blue-600 text-white border-blue-700' : 'text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'} backdrop-blur-sm border transition-all duration-300`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">⚙️</span>
+                    <span className="font-medium">Admin</span>
+                  </Link>
+                  
+                  <Link 
+                    href="/admin-outstation" 
+                    className={`group flex items-center px-4 py-3 rounded-xl ${router.pathname === '/admin-outstation' ? 'bg-blue-600 text-white border-blue-700' : 'text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'} backdrop-blur-sm border transition-all duration-300`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">🚗</span>
+                    <span className="font-medium">Out Station Management</span>
+                  </Link>
+                  
+                  <Link 
+                    href="/monthly-report" 
+                    className={`group flex items-center px-4 py-3 rounded-xl ${router.pathname === '/monthly-report' ? 'bg-blue-600 text-white border-blue-700' : 'text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'} backdrop-blur-sm border transition-all duration-300`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">📊</span>
+                    <span className="font-medium">Monthly Activity Report</span>
+                  </Link>
+                  
+                  <Link 
+                    href="/pdf-reports" 
+                    className={`group flex items-center px-4 py-3 rounded-xl ${router.pathname === '/pdf-reports' ? 'bg-blue-600 text-white border-blue-700' : 'text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'} backdrop-blur-sm border transition-all duration-300`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">📄</span>
+                    <span className="font-medium">PDF Reports</span>
+                  </Link>
+                  
+                  <Link 
+                    href="/giveaways" 
+                    className={`group flex items-center px-4 py-3 rounded-xl ${router.pathname === '/giveaways' ? 'bg-blue-600 text-white border-blue-700' : 'text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'} backdrop-blur-sm border transition-all duration-300`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">🎁</span>
+                    <span className="font-medium">Giveaways</span>
+                  </Link>
+                </>
+              )}
+              
+              {/* Non-Admin Links */}
               {user?.role !== 'admin' && (
                 <Link 
                   href="/dashboard" 
-                  className="group flex items-center px-4 py-3 rounded-xl text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300"
+                  className={`group flex items-center px-4 py-3 rounded-xl ${router.pathname === '/dashboard' ? 'bg-blue-600 text-white border-blue-700' : 'text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'} backdrop-blur-sm border transition-all duration-300`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">📊</span>
@@ -251,7 +328,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {user?.role !== 'admin' && (
                 <Link 
                   href="/clients" 
-                  className="group flex items-center px-4 py-3 rounded-xl text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300"
+                  className={`group flex items-center px-4 py-3 rounded-xl ${router.pathname === '/clients' ? 'bg-blue-600 text-white border-blue-700' : 'text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'} backdrop-blur-sm border transition-all duration-300`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">👥</span>
@@ -262,44 +339,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {user?.has_outstation_access && (
                 <Link 
                   href="/outstation-expense" 
-                  className="group flex items-center px-4 py-3 rounded-xl text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300"
+                  className={`group flex items-center px-4 py-3 rounded-xl ${router.pathname === '/outstation-expense' ? 'bg-blue-600 text-white border-blue-700' : 'text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'} backdrop-blur-sm border transition-all duration-300`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">🚗</span>
                   <span className="font-medium">Out Station Expense</span>
-                </Link>
-              )}
-              
-              {user?.role === 'admin' && (
-                <Link 
-                  href="/admin" 
-                  className="group flex items-center px-4 py-3 rounded-xl text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">⚙️</span>
-                  <span className="font-medium">Admin</span>
-                </Link>
-              )}
-              
-              {user?.role === 'admin' && (
-                <Link 
-                  href="/giveaways" 
-                  className="group flex items-center px-4 py-3 rounded-xl text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">🎁</span>
-                  <span className="font-medium">Giveaways</span>
-                </Link>
-              )}
-              
-              {user?.role === 'admin' && (
-                <Link 
-                  href="/monthly-report" 
-                  className="group flex items-center px-4 py-3 rounded-xl text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">📊</span>
-                  <span className="font-medium">Monthly Activity Report</span>
                 </Link>
               )}
               
