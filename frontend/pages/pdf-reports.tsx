@@ -19,6 +19,7 @@ interface PDFReport {
   report_date: string
   created_at: string
   file_size: number
+  report_type: string
 }
 
 interface UserWithReports {
@@ -39,6 +40,7 @@ export default function PDFReports() {
   const [message, setMessage] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [reportSearchTerm, setReportSearchTerm] = useState('')
+  const [activeTab, setActiveTab] = useState<'regular' | 'outstation'>('regular')
 
   const router = useRouter()
 
@@ -178,6 +180,35 @@ export default function PDFReports() {
 
   // Filter reports for selected user (sorted by date, newest first)
   const filteredAndSortedReports = userReports
+    .filter(report => {
+      if (!reportSearchTerm) return true
+      const searchLower = reportSearchTerm.toLowerCase()
+      return (
+        report.filename.toLowerCase().includes(searchLower) ||
+        new Date(report.report_date).toLocaleDateString().toLowerCase().includes(searchLower) ||
+        new Date(report.created_at).toLocaleDateString().toLowerCase().includes(searchLower)
+      )
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    
+  // Separate regular and outstation reports
+  const regularReports = userReports.filter(report => !report.report_type || report.report_type === 'regular' || report.report_type === 'daily_report')
+  const outstationReports = userReports.filter(report => report.report_type === 'outstation')
+  
+  // Apply search filtering to the appropriate report list based on active tab
+  const filteredRegularReports = regularReports
+    .filter(report => {
+      if (!reportSearchTerm) return true
+      const searchLower = reportSearchTerm.toLowerCase()
+      return (
+        report.filename.toLowerCase().includes(searchLower) ||
+        new Date(report.report_date).toLocaleDateString().toLowerCase().includes(searchLower) ||
+        new Date(report.created_at).toLocaleDateString().toLowerCase().includes(searchLower)
+      )
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    
+  const filteredOutstationReports = outstationReports
     .filter(report => {
       if (!reportSearchTerm) return true
       const searchLower = reportSearchTerm.toLowerCase()
@@ -350,34 +381,58 @@ export default function PDFReports() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center justify-between w-full sm:w-auto">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {selectedUser ? 'Reports List' : 'Users List'}
-                </h2>
-                <span className="text-sm text-gray-500 ml-3">
-                  {selectedUser 
-                    ? `${filteredAndSortedReports.length} of ${userReports.length} reports`
-                    : `${filteredUsers.length} of ${users.length} users`
-                  }
-                </span>
-              </div>
-              
-              {selectedUser && (
-                <div className="w-full sm:w-64">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search reports..."
-                      value={reportSearchTerm}
-                      onChange={(e) => setReportSearchTerm(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 pl-10 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                    />
-                    <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
+                <div className="flex items-center justify-between w-full sm:w-auto">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {selectedUser ? 'Reports List' : 'Users List'}
+                  </h2>
+                  <span className="text-sm text-gray-500 ml-3">
+                    {selectedUser 
+                      ? `${filteredAndSortedReports.length} of ${userReports.length} reports`
+                      : `${filteredUsers.length} of ${users.length} users`
+                    }
+                  </span>
                 </div>
-              )}
+                
+                {selectedUser && (
+                  <div className="flex flex-col sm:flex-row gap-4 items-center">
+                    {/* Tabs for report types */}
+                    <div className="flex rounded-lg overflow-hidden border border-gray-300">
+                      <button
+                        onClick={() => setActiveTab('regular')}
+                        className={`px-4 py-2 text-sm font-medium ${activeTab === 'regular' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                      >
+                        Regular Reports
+                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full bg-opacity-20 ${activeTab === 'regular' ? 'bg-white text-white' : 'bg-blue-100 text-blue-800'}`}>
+                          {filteredRegularReports.length}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('outstation')}
+                        className={`px-4 py-2 text-sm font-medium ${activeTab === 'outstation' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                      >
+                        Outstation Reports
+                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full bg-opacity-20 ${activeTab === 'outstation' ? 'bg-white text-white' : 'bg-blue-100 text-blue-800'}`}>
+                          {filteredOutstationReports.length}
+                        </span>
+                      </button>
+                    </div>
+                    
+                    <div className="w-full sm:w-64">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search reports..."
+                          value={reportSearchTerm}
+                          onChange={(e) => setReportSearchTerm(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 pl-10 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                        />
+                        <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                )}
             </div>
           </div>
           
@@ -510,15 +565,15 @@ export default function PDFReports() {
               </div>
             )}
             
-            {selectedUser && filteredAndSortedReports.length === 0 && (
+            {selectedUser && (activeTab === 'regular' ? filteredRegularReports : filteredOutstationReports).length === 0 && (
               <div className="py-12 text-center text-gray-500">
                 <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm3 5a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" clipRule="evenodd"></path>
                 </svg>
                 <p className="text-lg font-medium mb-2">
-                  {searchTerm ? 'No reports match your search' : `No reports found for ${selectedUser.full_name || selectedUser.email}`}
+                  {reportSearchTerm ? 'No reports match your search' : `No ${activeTab} reports found for ${selectedUser.full_name || selectedUser.email}`}
                 </p>
-                {searchTerm && (
+                {reportSearchTerm && (
                   <p className="text-sm text-gray-400">
                     Try adjusting your search terms
                   </p>

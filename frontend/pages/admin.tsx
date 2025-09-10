@@ -4,7 +4,7 @@ import Layout from '../components/Layout'
 import { api } from '../lib/api'
 import Cookies from 'js-cookie'
 
-interface User { id: number; email: string; full_name?: string; count?: number; visit_count?: number; active_clients_count?: number; monthly_recovery?: number }
+interface User { id: number; email: string; full_name?: string; designation?: string; count?: number; visit_count?: number; active_clients_count?: number; monthly_recovery?: number }
 interface CurrentUser { id: number; email: string; full_name?: string; role: string }
 interface Client {
   id: number
@@ -34,6 +34,7 @@ export default function Admin() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
+  const [designation, setDesignation] = useState('')
   const [message, setMessage] = useState('')
   const [clientMessage, setClientMessage] = useState('')
 
@@ -44,6 +45,7 @@ export default function Admin() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editUserEmail, setEditUserEmail] = useState('')
   const [editUserName, setEditUserName] = useState('')
+  const [editUserDesignation, setEditUserDesignation] = useState('')
   const [editUserPassword, setEditUserPassword] = useState('')
   const [userMessage, setUserMessage] = useState('')
   const [userSearchTerm, setUserSearchTerm] = useState('')
@@ -110,12 +112,14 @@ export default function Admin() {
       await api.post('/auth/create-user', {
         email,
         full_name: name,
-        password
+        password,
+        designation
       })
       setMessage('User created successfully!')
       setEmail('')
       setName('')
       setPassword('')
+      setDesignation('')
       
       // Reload users
       const res = await api.get('/admin/stats')
@@ -176,6 +180,7 @@ export default function Admin() {
     setEditingUser(user)
     setEditUserEmail(user.email)
     setEditUserName(user.full_name || '')
+    setEditUserDesignation(user.designation || '')
     setEditUserPassword('')
     setUserMessage('')
   }
@@ -184,6 +189,7 @@ export default function Admin() {
     setEditingUser(null)
     setEditUserEmail('')
     setEditUserName('')
+    setEditUserDesignation('')
     setEditUserPassword('')
     setUserMessage('')
   }
@@ -198,7 +204,8 @@ export default function Admin() {
     try {
       const updateData: any = {
         email: editUserEmail,
-        full_name: editUserName
+        full_name: editUserName,
+        designation: editUserDesignation
       }
       
       if (editUserPassword) {
@@ -290,7 +297,7 @@ export default function Admin() {
             </div>
             <h2 className="text-2xl font-bold text-gray-900">Create New User</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
               <input 
@@ -307,6 +314,15 @@ export default function Admin() {
                 placeholder="Enter full name" 
                 value={name} 
                 onChange={(e)=>setName(e.target.value)} 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Designation</label>
+              <input 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                placeholder="Enter designation" 
+                value={designation} 
+                onChange={(e)=>setDesignation(e.target.value)} 
               />
             </div>
             <div>
@@ -480,7 +496,7 @@ export default function Admin() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                       <input
@@ -497,6 +513,15 @@ export default function Admin() {
                         placeholder="Enter full name"
                         value={editUserName}
                         onChange={(e) => setEditUserName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Designation</label>
+                      <input
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="Enter designation"
+                        value={editUserDesignation}
+                        onChange={(e) => setEditUserDesignation(e.target.value)}
                       />
                     </div>
                     <div>

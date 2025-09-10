@@ -1,6 +1,6 @@
 from io import BytesIO
 from typing import List
-from datetime import datetime
+from datetime import datetime, date
 import os
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -266,7 +266,7 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
     return pdf_data
 
 
-def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> bytes:
+def generate_reports_pdf(user: models.User, reports: List[models.Report], custom_date: date = None) -> bytes:
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
@@ -279,9 +279,14 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> byt
         logo_height = 0.75 * inch
         c.drawImage(logo_path, width - logo_width - 0.5*inch, height - logo_height - 0.5*inch, width=logo_width, height=logo_height, preserveAspectRatio=True)
 
-    # Add current date with day
-    current_date = datetime.now()
-    date_str = current_date.strftime("%A, %B %d, %Y")
+    # Use custom date if provided, otherwise use current date
+    if custom_date:
+        report_date = custom_date
+    else:
+        report_date = datetime.now().date()
+    
+    # Format the date with day
+    date_str = report_date.strftime("%A, %B %d, %Y")
     
     c.setFont("Helvetica-Bold", 16)
     user_name = f"{user.full_name or user.email}"

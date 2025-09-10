@@ -3,6 +3,7 @@ import Layout from '../components/Layout'
 import { api } from '../lib/api'
 import { useRouter } from 'next/router'
 import Cookies from 'js-cookie'
+import DateSelectionModal from '../components/DateSelectionModal'
 
 interface Client { id: number; name: string; phone: string; address: string; user_id: number; created_at: string }
 interface Report { id: number; client: Client; shift_timing: string; payment_received: boolean; payment_amount: number; physician_sample: boolean; order_received: boolean; created_at: string }
@@ -54,6 +55,9 @@ export default function Dashboard() {
   const [editSelectedGiveaway, setEditSelectedGiveaway] = useState<GiveawayAssignment | null>(null)
   const [editGiveawayQuantity, setEditGiveawayQuantity] = useState('')
   const [reportSearchTerm, setReportSearchTerm] = useState('')
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false)
+  const [selectedReportDate, setSelectedReportDate] = useState('')
+  const [displayDate, setDisplayDate] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -123,11 +127,20 @@ export default function Dashboard() {
     }
   }
 
-  const onPDF = async () => {
+  const onPDF = () => {
+    // Set the action type to PDF and open date selection modal
+    setSelectedReportDate('pdf')
+    setIsDateModalOpen(true)
+  }
+
+  const handlePDFGeneration = async (selectedDate: string) => {
+    setSelectedReportDate(selectedDate)
+    setDisplayDate(selectedDate)
+    setIsDateModalOpen(false)
     try {
       setMessage('Generating PDF...')
-      // Fetch PDF as blob with authentication
-      const response = await api.get('/pdf/me', {
+      // Fetch PDF as blob with authentication and pass the selected date
+      const response = await api.get(`/pdf/me?report_date=${selectedDate}`, {
         responseType: 'blob'
       })
       
@@ -174,10 +187,20 @@ export default function Dashboard() {
     }
   }
 
-  const onSend = async () => {
+  const onSend = () => {
+    // Set the action type to save and open date selection modal
+    setSelectedReportDate('save')
+    setIsDateModalOpen(true)
+  }
+
+  const handleDateSubmit = async (selectedDate: string) => {
+    setSelectedReportDate(selectedDate)
+    setDisplayDate(selectedDate)
+    setIsDateModalOpen(false)
     setMessage('Saving report...')
     try {
-      const response = await api.post('/pdf/me/save')
+      // Pass the selected date to the API
+      const response = await api.post('/pdf/me/save', { report_date: selectedDate })
       setMessage(`Report saved successfully as ${response.data.filename}! All reports have been cleared.`)
       // Refresh reports list to show cleared data
       const r = await api.get('/reports/me')
@@ -276,10 +299,29 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="w-full max-w-7xl mx-auto px-4 py-6">
+        {/* Date Selection Modal */}
+        <DateSelectionModal 
+          isOpen={isDateModalOpen} 
+          onClose={() => setIsDateModalOpen(false)} 
+          onSubmit={(selectedDate) => {
+            // Determine which action to perform based on the current context
+            if (selectedReportDate === 'pdf') {
+              handlePDFGeneration(selectedDate);
+            } else {
+              handleDateSubmit(selectedDate);
+            }
+          }}
+          actionType={selectedReportDate === 'pdf' ? 'pdf' : 'save'}
+        />
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
           <p className="text-gray-600">Welcome back! Here's your reporting overview</p>
+          {displayDate && (
+            <div className="mt-2 p-2 bg-blue-50 text-blue-700 rounded-md inline-block">
+              <span className="font-medium">Selected Date: </span>{displayDate}
+            </div>
+          )}
         </div>
           
         {/* Stats Cards */}

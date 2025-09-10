@@ -12,17 +12,26 @@ from .reporting import generate_reports_pdf, generate_outstation_expense_pdf
 router = APIRouter(prefix="/pdf", tags=["pdf"]) 
 
 @router.get("/me", response_class=Response)
-def get_my_pdf(db: Session = Depends(get_db), user=Depends(get_current_user)):
+def get_my_pdf(report_date: Optional[str] = None, db: Session = Depends(get_db), user=Depends(get_current_user)):
     reports = (
         db.query(models.Report)
         .filter(models.Report.user_id == user.id)
         .order_by(models.Report.created_at.desc())
         .all()
     )
-    pdf = generate_reports_pdf(user, reports)
     
-    # Generate dynamic filename with username and current date
-    today = datetime.now()
+    # Use custom date if provided, otherwise use current date
+    custom_date = None
+    if report_date:
+        try:
+            custom_date = dt.strptime(report_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    pdf = generate_reports_pdf(user, reports, custom_date)
+    
+    # Generate dynamic filename with username and date (custom or current)
+    today = custom_date or datetime.now()
     username = (user.full_name or user.email.split('@')[0]).replace(' ', '')
     filename = f"{username}_{today.strftime('%d_%m_%Y')}.pdf"
     print(f"DEBUG: Generated filename: {filename}")
@@ -32,8 +41,14 @@ def get_my_pdf(db: Session = Depends(get_db), user=Depends(get_current_user)):
     print(f"DEBUG: Headers: {headers}")
     return Response(content=pdf, media_type="application/pdf", headers=headers)
 
+from pydantic import BaseModel
+from datetime import datetime as dt
+
+class SavePDFRequest(BaseModel):
+    report_date: Optional[str] = None
+
 @router.post("/me/save")
-def save_my_pdf(db: Session = Depends(get_db), user=Depends(get_current_user)):
+def save_my_pdf(request: SavePDFRequest = None, db: Session = Depends(get_db), user=Depends(get_current_user)):
     reports = (
         db.query(models.Report)
         .filter(models.Report.user_id == user.id)
@@ -44,15 +59,23 @@ def save_my_pdf(db: Session = Depends(get_db), user=Depends(get_current_user)):
     if not reports:
         raise HTTPException(status_code=400, detail="No reports found to save")
     
-    pdf = generate_reports_pdf(user, reports)
+    # Use custom date if provided, otherwise use current date
+    custom_date = None
+    if request and request.report_date:
+        try:
+            custom_date = dt.strptime(request.report_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    pdf = generate_reports_pdf(user, reports, custom_date)
     
     try:
         # Calculate aggregated payment data before deleting reports
         total_payment_amount = sum(report.payment_amount for report in reports if report.payment_received)
         total_reports_count = len(reports)
         
-        # Generate dynamic filename with username and current date
-        today = datetime.now()
+        # Generate dynamic filename with username and date (custom or current)
+        today = custom_date or datetime.now()
         username = (user.full_name or user.email.split('@')[0]).replace(' ', '')
         filename = f"{username}_{today.strftime('%d_%m_%Y')}.pdf"
         
@@ -258,7 +281,8 @@ def get_all_saved_pdfs(db: Session = Depends(get_db), admin=Depends(require_admi
         "user_email": pdf.user.email,
         "report_date": pdf.report_date.isoformat(),
         "created_at": pdf.created_at.isoformat(),
-        "file_size": pdf.file_size
+        "file_size": pdf.file_size,
+        "report_type": pdf.report_type
     } for pdf in pdf_reports]
 
 @router.get("/admin/download/{pdf_id}", response_class=Response)

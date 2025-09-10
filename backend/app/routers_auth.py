@@ -41,6 +41,7 @@ def create_user_simple(user_data: dict, db: Session = Depends(get_db), admin=Dep
     user = models.User(
         email=user_data["email"],
         full_name=user_data["full_name"],
+        designation=user_data.get("designation"),
         hashed_password=get_password_hash(user_data["password"]),
         role=models.Role.user  # Default to user role
     )
@@ -70,6 +71,9 @@ def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Dep
     # Update other fields
     if user_update.full_name is not None:
         user.full_name = user_update.full_name
+    
+    if user_update.designation is not None:
+        user.designation = user_update.designation
     
     if user_update.password:
         user.hashed_password = get_password_hash(user_update.password)

@@ -302,6 +302,9 @@ def get_monthly_report(
         } for visit in daily_visits
     ]
     
+    # Sort visit data by date
+    visit_data.sort(key=lambda x: x["date"])
+    
     recovery_data = daily_recovery
     
     # Calculate monthly totals
