@@ -19,6 +19,7 @@ class TravellingType(str, Enum):
 class UserBase(BaseModel):
     email: str
     full_name: Optional[str] = None
+    designation: Optional[str] = None
     role: Role = Role.user
     has_outstation_access: Optional[bool] = False
 
@@ -28,6 +29,7 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
+    designation: Optional[str] = None
     password: Optional[str] = None
 
 class UserOut(UserBase):

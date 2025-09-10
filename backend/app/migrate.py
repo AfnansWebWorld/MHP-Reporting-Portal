@@ -25,6 +25,18 @@ def run_migrations():
             db.execute(text(
                 "ALTER TABLE users ADD COLUMN has_outstation_access BOOLEAN NOT NULL DEFAULT false"
             ))
+            
+        # Check if designation column exists in users table
+        has_column = db.execute(text(
+            "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
+            "WHERE table_name='users' AND column_name='designation')"
+        )).scalar()
+        
+        if not has_column:
+            print("Adding designation column to users table")
+            db.execute(text(
+                "ALTER TABLE users ADD COLUMN designation VARCHAR(255)"
+            ))
         
         # Check if report_type column exists in pdf_reports table
         has_column = db.execute(text(

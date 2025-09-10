@@ -9,6 +9,7 @@ def seed(db: Session):
         admin = models.User(
             email="admin@mhp.com",
             full_name="Admin User",
+            designation="System Administrator",
             hashed_password=get_password_hash("admin123"),
             role=models.Role.admin,
         )
@@ -20,6 +21,7 @@ def seed(db: Session):
         user = models.User(
             email="user@mhp.com",
             full_name="Demo User",
+            designation="Sales Representative",
             hashed_password=get_password_hash("user123"),
             role=models.Role.user,
         )

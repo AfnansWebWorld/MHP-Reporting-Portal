@@ -23,6 +23,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     full_name = Column(String, nullable=True)
+    designation = Column(String, nullable=True)  # User's job designation/title
     hashed_password = Column(String, nullable=False)
     role = Column(Enum(Role), default=Role.user, nullable=False)
     is_active = Column(Boolean, default=True)

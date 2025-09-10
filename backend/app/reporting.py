@@ -1,6 +1,7 @@
 from io import BytesIO
 from typing import List
 from datetime import datetime
+import os
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
@@ -21,27 +22,51 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
-
-    # Add current date with day
-    current_date = datetime.now()
-    date_str = current_date.strftime("%A, %B %d, %Y")
     
-    # Add title with improved styling
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(1 * inch, height - 0.7 * inch, f"Out Station Expense Report - {user.full_name or user.email}")
-    
-    # Add date with improved styling
-    c.setFont("Helvetica", 12)
-    c.drawString(1 * inch, height - 1 * inch, f"Date: {date_str}")
+    # Add logo at the top
+    logo_path = os.path.join(os.path.dirname(__file__), "static", "logo2.png")
+    print(f"Reports PDF Logo path: {logo_path}")
+    print(f"Logo exists: {os.path.exists(logo_path)}")
+    if os.path.exists(logo_path):
+        # Position the logo at the top right
+        logo_width = 1.5 * inch
+        logo_height = 0.75 * inch
+        try:
+            c.drawImage(logo_path, width - logo_width - 0.5*inch, height - logo_height - 0.5*inch, width=logo_width, height=logo_height, preserveAspectRatio=True)
+            print("Logo added successfully")
+        except Exception as e:
+            print(f"Error adding logo: {e}")
 
-    # Add month if expenses exist with improved styling
-    if expenses and len(expenses) > 0:
-        c.drawString(1 * inch, height - 1.3 * inch, f"Month: {expenses[0].month}")
+    # Add title and date
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(1 * inch, height - 0.7 * inch, f"Out Station Expenses - {user.full_name or user.email}")
+    
+    # Add designation if available
+    if user.designation:
+        c.setFont("Helvetica", 12)
+        c.drawString(1 * inch, height - 1.0 * inch, f"Designation: {user.designation}")
+        # Move date down when designation is present
+        c.drawString(1 * inch, height - 1.3 * inch, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
+        
+        # Add month if expenses exist with improved styling
+        if expenses and len(expenses) > 0:
+            c.drawString(1 * inch, height - 1.6 * inch, f"Month: {expenses[0].month}")
+    else:
+        # Keep date in original position when no designation
+        c.setFont("Helvetica", 12)
+        c.drawString(1 * inch, height - 1.0 * inch, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
+        
+        # Add month if expenses exist with improved styling
+        if expenses and len(expenses) > 0:
+            c.drawString(1 * inch, height - 1.3 * inch, f"Month: {expenses[0].month}")
 
     # Add a decorative line under the header
     c.setStrokeColorRGB(0.8, 0.8, 0.8)
     c.setLineWidth(1)
-    c.line(1 * inch, height - 1.5 * inch, 7.5 * inch, height - 1.5 * inch)
+    if user.designation:
+        c.line(1 * inch, height - 1.8 * inch, 7.5 * inch, height - 1.8 * inch)  # Lower position when designation exists
+    else:
+        c.line(1 * inch, height - 1.5 * inch, 7.5 * inch, height - 1.5 * inch)  # Original position
     c.setStrokeColorRGB(0, 0, 0)  # Reset to black
     c.setLineWidth(0.5)  # Reset line width
     
@@ -235,18 +260,39 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report]) -> byt
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
 
+    # Add logo at the top
+    logo_path = os.path.join(os.path.dirname(__file__), "static", "logo2.png")
+    if os.path.exists(logo_path):
+        # Position the logo at the top right
+        logo_width = 1.5 * inch
+        logo_height = 0.75 * inch
+        c.drawImage(logo_path, width - logo_width - 0.5*inch, height - logo_height - 0.5*inch, width=logo_width, height=logo_height, preserveAspectRatio=True)
+
     # Add current date with day
     current_date = datetime.now()
     date_str = current_date.strftime("%A, %B %d, %Y")
     
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(1 * inch, height - 0.7 * inch, f"MHP Reporting - {user.full_name or user.email}")
+    user_name = f"{user.full_name or user.email}"
+    c.drawString(1 * inch, height - 0.7 * inch, f"MHP Reporting - {user_name}")
     
-    c.setFont("Helvetica", 12)
-    c.drawString(1 * inch, height - 1 * inch, f"Date: {date_str}")
+    # Add designation on separate line if available
+    if user.designation:
+        c.setFont("Helvetica", 12)
+        c.drawString(1 * inch, height - 1.0 * inch, f"Designation: {user.designation}")
+        # Move date down when designation is present
+        c.drawString(1 * inch, height - 1.3 * inch, f"Date: {date_str}")
+    else:
+        # Keep date in original position when no designation
+        c.setFont("Helvetica", 12)
+        c.drawString(1 * inch, height - 1.0 * inch, f"Date: {date_str}")
 
     c.setFont("Helvetica-Bold", 10)
-    y = height - 1.5 * inch
+    # Adjust y position based on whether designation exists
+    if user.designation:
+        y = height - 1.8 * inch  # Move down when designation is present
+    else:
+        y = height - 1.5 * inch  # Keep original position when no designation
 
     headers = ["S.no", "Client", "Phone", "Address", "Shift", "Payment", "P/S", "Order", "Giveaway"]
     col_x = [0.25*inch, 0.75*inch, 2.0*inch, 3.0*inch, 4.6*inch, 5.2*inch, 6.2*inch, 6.7*inch, 7.2*inch]
