@@ -109,6 +109,9 @@ def get_outstation_expense_pdf(
     if month:
         query = query.filter(models.OutStationExpense.month == month)
     
+    # Filter out test data entries
+    query = query.filter(models.OutStationExpense.summary_of_activity != "Test activity summary")
+    
     # Order by day of month
     expenses = query.order_by(models.OutStationExpense.day_of_month).all()
     
@@ -138,6 +141,9 @@ def save_outstation_expense_pdf(
     # Filter by month if provided
     if month:
         query = query.filter(models.OutStationExpense.month == month)
+    
+    # Filter out test data entries
+    query = query.filter(models.OutStationExpense.summary_of_activity != "Test activity summary")
     
     # Order by day of month
     expenses = query.order_by(models.OutStationExpense.day_of_month).all()
@@ -214,6 +220,9 @@ def admin_get_user_outstation_pdf(
     if month:
         query = query.filter(models.OutStationExpense.month == month)
     
+    # Filter out test data entries
+    query = query.filter(models.OutStationExpense.summary_of_activity != "Test activity summary")
+    
     # Order by day of month
     expenses = query.order_by(models.OutStationExpense.day_of_month).all()
     
@@ -272,3 +281,124 @@ def view_pdf(pdf_id: int, db: Session = Depends(get_db), admin=Depends(require_a
         raise HTTPException(status_code=404, detail="PDF report not found")
     
     return Response(content=pdf_report.pdf_data, media_type="application/pdf")
+
+@router.get("/outstation/generate_monthly/", name="generate_outstation_monthly_pdf")
+def generate_outstation_monthly_pdf(
+    month: str,
+    user_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin)
+):
+    """Generate a monthly PDF for outstation expenses (admin only)
+    
+    This endpoint allows admins to generate PDFs for a specific month,
+    optionally filtered by user_id.
+    """
+    # Build the query
+    query = db.query(models.OutStationExpense)
+    
+    # Filter by month (required)
+    query = query.filter(models.OutStationExpense.month == month)
+    
+    # Filter out test data entries
+    query = query.filter(models.OutStationExpense.summary_of_activity != "Test activity summary")
+    
+    # Filter by user if specified
+    if user_id:
+        # Check if user exists
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        query = query.filter(models.OutStationExpense.user_id == user_id)
+    
+    # Get expenses ordered by user and day
+    expenses = query.order_by(
+        models.OutStationExpense.user_id,
+        models.OutStationExpense.day_of_month
+    ).all()
+    
+    if not expenses:
+        raise HTTPException(status_code=404, detail="No outstation expenses found for the specified criteria")
+    
+    try:
+        # If filtering by user_id, generate a single user PDF
+        if user_id:
+            user = db.query(models.User).filter(models.User.id == user_id).first()
+            pdf = generate_outstation_expense_pdf(user, expenses)
+            
+            # Generate filename
+            username = (user.full_name or user.email.split('@')[0]).replace(' ', '')
+            filename = f"{username}_OutStation_{month.replace(' ', '_')}.pdf"
+            
+            # Save PDF to database
+            pdf_report = models.PDFReport(
+                user_id=user.id,
+                filename=filename,
+                pdf_data=pdf,
+                report_date=date.today(),
+                file_size=len(pdf),
+                report_type="outstation"
+            )
+            db.add(pdf_report)
+            db.commit()
+            db.refresh(pdf_report)
+            
+            # Update expense records with pdf_report_id
+            for expense in expenses:
+                expense.pdf_report_id = pdf_report.id
+            db.commit()
+            
+            return {"status": "success", "pdf_id": pdf_report.id}
+        
+        # If no user_id specified, we need to generate PDFs for each user with expenses
+        else:
+            # Group expenses by user_id
+            user_expenses = {}
+            for expense in expenses:
+                if expense.user_id not in user_expenses:
+                    user_expenses[expense.user_id] = []
+                user_expenses[expense.user_id].append(expense)
+            
+            # Generate and save PDF for each user
+            pdf_ids = []
+            for user_id, user_exps in user_expenses.items():
+                user = db.query(models.User).filter(models.User.id == user_id).first()
+                if not user:
+                    continue
+                
+                pdf = generate_outstation_expense_pdf(user, user_exps)
+                
+                # Generate filename
+                username = (user.full_name or user.email.split('@')[0]).replace(' ', '')
+                filename = f"{username}_OutStation_{month.replace(' ', '_')}.pdf"
+                
+                # Save PDF to database
+                pdf_report = models.PDFReport(
+                    user_id=user.id,
+                    filename=filename,
+                    pdf_data=pdf,
+                    report_date=date.today(),
+                    file_size=len(pdf),
+                    report_type="outstation"
+                )
+                db.add(pdf_report)
+                db.commit()
+                db.refresh(pdf_report)
+                
+                # Update expense records with pdf_report_id
+                for expense in user_exps:
+                    expense.pdf_report_id = pdf_report.id
+                db.commit()
+                
+                pdf_ids.append(pdf_report.id)
+            
+            if not pdf_ids:
+                raise HTTPException(status_code=404, detail="No PDFs could be generated")
+            
+            # Return the first PDF ID if multiple were generated
+            return {"status": "success", "pdf_id": pdf_ids[0], "total_pdfs": len(pdf_ids)}
+    
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")

@@ -74,7 +74,7 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
     y = height - 1.8 * inch
 
     headers = ["Day", "Station", "Travelling", "KM Travelled", "CSR Verified", "Summary"]
-    col_x = [0.50*inch, 1.0*inch, 2.5*inch, 3.5*inch, 4.6*inch, 5.8*inch]
+    col_x = [0.25*inch, 0.75*inch, 2.0*inch, 3.2*inch, 4.4*inch, 5.6*inch]
     col_widths = [0.5*inch, 1.25*inch, 1.2*inch, 1.2*inch, 1.2*inch, 2.6*inch]
 
     # Draw header background and text (bold)
@@ -152,9 +152,12 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
         # Add minimal left padding for text positioning
         text_padding = 0.08 * inch
         
-        # Draw row data
-        # Day
-        c.drawString(col_x[0] + text_padding, y, str(expense.day_of_month))
+        # Draw row data with proper alignment
+        # Day - center align
+        day_text = str(expense.day_of_month)
+        day_width = c.stringWidth(day_text, "Helvetica", 10)
+        day_x = col_x[0] + ((col_x[1] - col_x[0]) - day_width) / 2
+        c.drawString(day_x, y, day_text)
         
         # Station
         c.drawString(col_x[1] + text_padding, y, expense.station.value)
@@ -162,15 +165,21 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
         # Travelling
         c.drawString(col_x[2] + text_padding, y, expense.travelling.value)
         
-        # KM Travelled
-        c.drawString(col_x[3] + text_padding, y, str(expense.km_travelled))
+        # KM Travelled - right align
+        km_text = str(expense.km_travelled)
+        km_width = c.stringWidth(km_text, "Helvetica", 10)
+        km_x = col_x[4] - km_width - text_padding
+        c.drawString(km_x, y, km_text)
         
-        # CSR Verified
-        c.drawString(col_x[4] + text_padding, y, expense.csr_verified)
+        # CSR Verified - center align
+        csr_text = expense.csr_verified
+        csr_width = c.stringWidth(csr_text, "Helvetica", 10)
+        csr_x = col_x[4] + ((col_x[5] - col_x[4]) - csr_width) / 2
+        c.drawString(csr_x, y, csr_text)
         
-        # Summary of Activity - Handle multi-line text
+        # Summary of Activity - Handle multi-line text with improved wrapping
         summary_text = expense.summary_of_activity
-        max_chars_per_line = 30  # Adjust based on column width
+        max_chars_per_line = 25  # Adjusted for better fit in column width
         
         summary_lines = []
         if len(summary_text) > max_chars_per_line:
@@ -198,18 +207,18 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
         max_lines = len(summary_lines)
         row_height = max(0.25 * inch, 0.22 * inch * max_lines)
         
-        # Draw summary text (potentially multi-line)
+        # Draw summary text (potentially multi-line) with proper alignment
         for i, line in enumerate(summary_lines):
-            c.drawString(col_x[5] + text_padding, y - (i * 0.15 * inch), line)
+            c.drawString(col_x[5] + text_padding, y - (i * 0.15 * inch), line.strip())
         
-        # Draw cell borders for this row (matching generate_reports_pdf)
+        # Draw cell borders for this row with proper alignment
         row_top = y + 0.15*inch
         row_bottom = y - max(row_height, 0.25 * inch) + 0.15*inch
         
         # Draw horizontal lines (bottom of row)
         c.line(0.25*inch, row_bottom, 8.2*inch, row_bottom)
         
-        # Draw vertical lines for each column
+        # Draw vertical lines for each column with consistent width
         c.line(0.25*inch, row_top, 0.25*inch, row_bottom)  # Left border
         for i in range(1, len(col_x)):
             c.line(col_x[i], row_top, col_x[i], row_bottom)  # Column separators
@@ -231,14 +240,16 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
     total_km = sum(expense.km_travelled for expense in expenses)
     y -= 0.3 * inch
     
-    # Draw a box for the total
+    # Draw a box for the total that aligns with the table
     c.setFillColorRGB(0.95, 0.95, 0.95)  # Light gray background
-    c.rect(0.25*inch, y - 0.15*inch, 3*inch, 0.25*inch, fill=1)
+    c.rect(0.25*inch, y - 0.15*inch, 8.0*inch, 0.25*inch, fill=1)
     c.setFillColorRGB(0, 0, 0)  # Reset to black
     
-    # Add total text with improved styling
+    # Add total text with improved styling and right alignment
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(0.35*inch, y, f"Total KM Travelled: {total_km}")
+    total_text = f"Total KM Travelled: {total_km}"
+    # Right align the total under the KM Travelled column
+    c.drawString(col_x[3] + text_padding, y, total_text)
     
     # Add footer with date generated
     c.setFont("Helvetica", 8)

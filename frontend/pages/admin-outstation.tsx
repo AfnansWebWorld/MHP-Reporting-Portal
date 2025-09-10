@@ -160,9 +160,11 @@ const AdminOutStationPage = () => {
       const params: Record<string, any> = { month }
       if (userId) params.user_id = userId
       
-      const response = await api.get('/pdf/outstation/generate', { params })
+      console.log('Generating PDF for month:', month, 'user:', userId || 'all users')
+      const response = await api.get('/pdf/outstation/generate_monthly/', { params })
       
       if (response.data.pdf_id) {
+        console.log('PDF generated successfully, downloading PDF ID:', response.data.pdf_id)
         downloadPdf(response.data.pdf_id)
       } else {
         toast.error('No PDF was generated')

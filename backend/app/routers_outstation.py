@@ -138,6 +138,9 @@ def admin_get_all_expenses(
     if month:
         query = query.filter(models.OutStationExpense.month == month)
     
+    # Filter out test data entries
+    query = query.filter(models.OutStationExpense.summary_of_activity != "Test activity summary")
+    
     # Order by user_id, month, and day_of_month
     expenses = query.order_by(
         models.OutStationExpense.user_id,
