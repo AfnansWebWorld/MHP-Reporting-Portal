@@ -6,6 +6,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib import colors
+from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from . import models
 
 
@@ -236,20 +238,103 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
                 c.line(col_x[i], y + 0.15*inch, col_x[i], bottom_of_page)
             c.line(8.2*inch, y + 0.15*inch, 8.2*inch, bottom_of_page)  # Right border
 
+    # Count occurrences of each station type and travelling type
+    station_counts = {}
+    travelling_counts = {}
+    for expense in expenses:
+        # Count station types
+        station_type = expense.station.value
+        if station_type in station_counts:
+            station_counts[station_type] += 1
+        else:
+            station_counts[station_type] = 1
+            
+        # Count travelling types
+        travelling_type = expense.travelling.value
+        if travelling_type in travelling_counts:
+            travelling_counts[travelling_type] += 1
+        else:
+            travelling_counts[travelling_type] = 1
+    
     # Add total KM travelled with improved styling
     total_km = sum(expense.km_travelled for expense in expenses)
-    y -= 0.3 * inch
+    y -= 0.5 * inch  # Increased top margin
     
-    # Draw a box for the total that aligns with the table
+    # Draw a box for the total KM that aligns with the table
     c.setFillColorRGB(0.95, 0.95, 0.95)  # Light gray background
     c.rect(0.25*inch, y - 0.15*inch, 8.0*inch, 0.25*inch, fill=1)
     c.setFillColorRGB(0, 0, 0)  # Reset to black
     
-    # Add total text with improved styling and right alignment
+    # Add total KM text with improved styling and right alignment
     c.setFont("Helvetica-Bold", 11)
     total_text = f"Total KM Travelled: {total_km}"
     # Right align the total under the KM Travelled column
     c.drawString(col_x[3] + text_padding, y, total_text)
+    
+    # Add station and travelling count totals - increased spacing
+    y -= 0.8 * inch
+    
+    # Create a table for the count totals (similar to the main expense table)
+    count_data = []
+    
+    # Create a table with headers in the first row
+    table_headers = ["Station Count Totals:", "Travelling Count Totals:"]
+    count_data.append(table_headers)
+    
+    # Prepare data rows
+    max_items = max(len(station_counts), len(travelling_counts))
+    
+    # Add station counts
+    station_rows = []
+    for station, count in station_counts.items():
+        station_rows.append(f"{station}: {count}")
+    
+    # Add travelling counts
+    travelling_rows = []
+    for travelling, count in travelling_counts.items():
+        travelling_rows.append(f"{travelling}: {count}")
+    
+    # Ensure both columns have the same number of rows
+    while len(station_rows) < max_items:
+        station_rows.append("")
+    while len(travelling_rows) < max_items:
+        travelling_rows.append("")
+    
+    # Add all rows to the table data
+    for i in range(max_items):
+        count_data.append([station_rows[i], travelling_rows[i]])
+    
+    # Set up the table with better styling
+    count_table = Table(count_data, colWidths=[4.0*inch, 4.0*inch])
+    
+    # Enhanced styling for the count totals table
+    count_table_style = TableStyle([
+        ('BOX', (0, 0), (-1, -1), 1.5, colors.black),  # Thicker outer border
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),  # Grid lines for all cells
+        ('BACKGROUND', (0, 0), (0, 0), colors.lightgrey),  # Header background
+        ('BACKGROUND', (1, 0), (1, 0), colors.lightgrey),  # Header background
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Bold header
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),  # Center align headers
+        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),  # Left align content
+        ('FONTSIZE', (0, 0), (-1, 0), 11),  # Larger font for headers
+        ('FONTSIZE', (0, 1), (-1, -1), 10),  # Normal font for content
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),  # More header padding
+        ('TOPPADDING', (0, 0), (-1, 0), 8),  # More header padding
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 4),  # More cell padding
+        ('TOPPADDING', (0, 1), (-1, -1), 4),  # More cell padding
+        ('LEFTPADDING', (0, 0), (-1, -1), 12),  # More left padding
+        ('RIGHTPADDING', (0, 0), (-1, -1), 12),  # Add right padding
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),  # Vertical alignment
+    ])
+    
+    count_table.setStyle(count_table_style)
+    
+    # Draw the table with better positioning
+    count_table.wrapOn(c, 8.5*inch, 11*inch)
+    count_table.drawOn(c, 0.25*inch, y - (0.3*inch * max_items) - 0.5*inch)
+    
+    # Update y position for any content that follows
+    y -= (0.25*inch * max_items) - 0.5*inch
     
     # Add footer with date generated
     c.setFont("Helvetica", 8)
