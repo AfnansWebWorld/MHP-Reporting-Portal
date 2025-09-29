@@ -227,7 +227,7 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
         c.line(8.2*inch, row_top, 8.2*inch, row_bottom)  # Right border
         
         # Update y position
-        y -= max(row_height, 0.25 * inch)
+        y -= max(row_height, 0.35 * inch)
         
         # Check if we need a new page for the next row
         if y <= 1.2*inch and idx < len(sorted_expenses) - 1:
@@ -529,7 +529,7 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report], custom
         # Calculate row height based on maximum lines needed (client name, address, or giveaway)
         max_lines = max(len(client_lines), len(address_lines), len(giveaway_lines))
         # Increase base height and ensure minimum height for multi-line content
-        row_height = max(0.25 * inch, 0.22 * inch * max_lines)
+        row_height = max(0.35 * inch, 0.28 * inch * max_lines)
         
         # Add minimal left padding for text positioning
         text_padding = 0.08 * inch
@@ -539,11 +539,11 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report], custom
         
         # Draw client name (potentially multi-line)
         for i, line in enumerate(client_lines):
-            c.drawString(col_x[1] + text_padding, y - (i * 0.15 * inch), line)
+            c.drawString(col_x[1] + text_padding, y - (i * 0.20 * inch), line)
         
         # Draw address (potentially multi-line)
         for i, line in enumerate(address_lines):
-            c.drawString(col_x[3] + text_padding, y - (i * 0.15 * inch), line)
+            c.drawString(col_x[3] + text_padding, y - (i * 0.20 * inch), line)
         
         # Draw other fields at the top line position
         c.drawString(col_x[2] + text_padding, y, phone_text)
@@ -558,11 +558,11 @@ def generate_reports_pdf(user: models.User, reports: List[models.Report], custom
         
         # Draw giveaway text (potentially multi-line)
         for i, line in enumerate(giveaway_lines):
-            c.drawString(col_x[8] + text_padding + 0.05*inch, y - (i * 0.15 * inch), line)
+            c.drawString(col_x[8] + text_padding + 0.05*inch, y - (i * 0.20 * inch), line)
         
         # Draw cell borders for this row
         row_top = y + 0.15*inch
-        row_bottom = y - max(row_height, 0.25 * inch) + 0.15*inch
+        row_bottom = y - max(row_height, 0.35 * inch) + 0.15*inch
         
         # Draw horizontal lines (top and bottom of row)
         c.line(0.25*inch, row_bottom, 8.2*inch, row_bottom)

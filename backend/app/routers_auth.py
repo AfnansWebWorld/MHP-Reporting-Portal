@@ -10,11 +10,28 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=schemas.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
-    token = create_access_token({"sub": str(user.id), "role": user.role.value})
-    return {"access_token": token, "token_type": "bearer"}
+    try:
+        # Log authentication attempt (without password)
+        print(f"Login attempt for user: {form_data.username}")
+        
+        # Query the user
+        user = db.query(models.User).filter(models.User.email == form_data.username).first()
+        
+        # Check credentials
+        if not user or not verify_password(form_data.password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Incorrect email or password")
+        
+        # Generate token
+        token = create_access_token({"sub": str(user.id), "role": user.role.value})
+        print(f"Login successful for user: {form_data.username}")
+        
+        return {"access_token": token, "token_type": "bearer"}
+    except Exception as e:
+        # Log the error (but don't expose details to client)
+        import traceback
+        print(f"Login error for {form_data.username}: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Internal server error during authentication")
 
 @router.post("/users", response_model=schemas.UserOut)
 def create_user(user_in: schemas.UserCreate, db: Session = Depends(get_db), admin=Depends(require_admin)):

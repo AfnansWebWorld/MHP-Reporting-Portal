@@ -40,17 +40,40 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        # Decode the JWT token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = int(payload.get("sub"))
-        if user_id is None:
+        user_id_str = payload.get("sub")
+        
+        if user_id_str is None:
+            print("Token missing 'sub' claim")
             raise credentials_exception
-    except JWTError:
+            
+        try:
+            user_id = int(user_id_str)
+        except ValueError:
+            print(f"Invalid user ID format in token: {user_id_str}")
+            raise credentials_exception
+            
+        # Query the user from database
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        
+        if user is None:
+            print(f"User with ID {user_id} not found in database")
+            raise credentials_exception
+            
+        return user
+        
+    except JWTError as e:
+        print(f"JWT validation error: {str(e)}")
         raise credentials_exception
-
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if user is None:
-        raise credentials_exception
-    return user
+    except Exception as e:
+        print(f"Unexpected error in authentication: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during authentication"
+        )
 
 
 def require_admin(user: models.User = Depends(get_current_user)):

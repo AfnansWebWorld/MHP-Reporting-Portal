@@ -54,8 +54,10 @@ try:
     engine = create_engine(
         DATABASE_URL, 
         pool_pre_ping=True,
-        pool_recycle=3600,  # Recycle connections after 1 hour
-        connect_args={"connect_timeout": 30}  # 30 second connection timeout
+        pool_recycle=1800,  # Recycle connections after 30 minutes
+        pool_size=10,       # Increase connection pool size
+        max_overflow=20,    # Allow more connections when under heavy load
+        connect_args={"connect_timeout": 60}  # 60 second connection timeout
     )
     # Test connection
     with engine.connect() as conn:
