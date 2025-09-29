@@ -18,6 +18,20 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def verify_password(plain_password, hashed_password):
+    # Bcrypt has a 72-byte limit for passwords
+    # Truncate the password if it's longer than 72 bytes
+    if isinstance(plain_password, str):
+        # Convert to bytes if it's a string
+        plain_password_bytes = plain_password.encode('utf-8')
+    else:
+        plain_password_bytes = plain_password
+    
+    # Truncate to 72 bytes if necessary
+    if len(plain_password_bytes) > 72:
+        print(f"Warning: Password exceeds 72 bytes, truncating to 72 bytes")
+        plain_password_bytes = plain_password_bytes[:72]
+        plain_password = plain_password_bytes.decode('utf-8') if isinstance(plain_password, str) else plain_password_bytes
+    
     return pwd_context.verify(plain_password, hashed_password)
 
 
