@@ -9,29 +9,84 @@ from .auth import get_current_user
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    import logging
+    from fastapi import status
+    from datetime import timedelta
+    
+    logger = logging.getLogger(__name__)
+    ACCESS_TOKEN_EXPIRE_MINUTES = 30  # Default value, adjust as needed
+    
     try:
-        # Log authentication attempt (without password)
-        print(f"Login attempt for user: {form_data.username}")
+        logger.info(f"Login attempt for user: {form_data.username}")
         
-        # Query the user
-        user = db.query(models.User).filter(models.User.email == form_data.username).first()
+        # Step 1: Query the user
+        try:
+            user = db.query(models.User).filter(models.User.email == form_data.username).first()
+            if not user:
+                logger.warning(f"Login failed - user not found: {form_data.username}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect username or password",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            logger.info(f"User found in database: {form_data.username}")
+        except Exception as e:
+            logger.error(f"Database query error: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error during authentication",
+            )
         
-        # Check credentials
-        if not user or not verify_password(form_data.password, user.hashed_password):
-            raise HTTPException(status_code=400, detail="Incorrect email or password")
+        # Step 2: Verify password with detailed logging
+        try:
+            # Log password length for debugging (don't log actual password)
+            password_length = len(form_data.password)
+            password_bytes_length = len(form_data.password.encode('utf-8'))
+            logger.info(f"Password length: {password_length} chars, {password_bytes_length} bytes")
+            
+            # Verify password with explicit error handling
+            password_valid = verify_password(form_data.password, user.hashed_password)
+            
+            if not password_valid:
+                logger.warning(f"Login failed - invalid password for: {form_data.username}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect username or password",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            logger.info(f"Password verified successfully for: {form_data.username}")
+        except HTTPException:
+            # Re-raise HTTP exceptions
+            raise
+        except Exception as e:
+            logger.error(f"Password verification error: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error during password verification",
+            )
         
-        # Generate token
-        token = create_access_token({"sub": str(user.id), "role": user.role.value})
-        print(f"Login successful for user: {form_data.username}")
-        
-        return {"access_token": token, "token_type": "bearer"}
+        # Step 3: Generate token
+        try:
+            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = create_access_token(
+                data={"sub": str(user.id), "role": user.role.value}, 
+                expires_delta=access_token_expires
+            )
+            logger.info(f"Login successful for user: {form_data.username}")
+            return {"access_token": access_token, "token_type": "bearer"}
+        except Exception as e:
+            logger.error(f"Token generation error: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error generating authentication token",
+            )
     except Exception as e:
-        # Log the error (but don't expose details to client)
-        import traceback
-        print(f"Login error for {form_data.username}: {str(e)}")
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail="Internal server error during authentication")
+        logger.error(f"Unhandled login error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during authentication",
+        )
 
 @router.post("/users", response_model=schemas.UserOut)
 def create_user(user_in: schemas.UserCreate, db: Session = Depends(get_db), admin=Depends(require_admin)):

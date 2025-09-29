@@ -1,6 +1,7 @@
 import os
+import logging
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Union
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
@@ -9,47 +10,80 @@ from sqlalchemy.orm import Session
 from . import models
 from .database import get_db
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 SECRET_KEY = os.getenv("SECRET_KEY", "change-this-secret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Configure CryptContext with fallback schemes in case bcrypt has issues
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12,  # Explicitly set rounds
+    bcrypt__ident="2b",  # Use the 2b identifier which is widely supported
+)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-def verify_password(plain_password, hashed_password):
-    # Bcrypt has a 72-byte limit for passwords
+def verify_password(plain_password: Union[str, bytes], hashed_password: str) -> bool:
+    """
+    Verify a password against a hash with bcrypt's 72-byte limit handling.
+    
+    Args:
+        plain_password: The plaintext password (string or bytes)
+        hashed_password: The hashed password to check against
+        
+    Returns:
+        bool: True if password matches, False otherwise
+    """
+    # Early return if inputs are invalid
+    if not plain_password or not hashed_password:
+        logger.warning("Empty password or hash provided")
+        return False
+    
+    # Simple direct approach - always truncate to 72 bytes first
     try:
-        # Convert to bytes if it's a string
+        # Convert to bytes if string
         if isinstance(plain_password, str):
-            plain_password_bytes = plain_password.encode('utf-8')
+            password_bytes = plain_password.encode('utf-8')
         else:
-            plain_password_bytes = plain_password
+            password_bytes = plain_password
+            
+        # Always truncate to 72 bytes before verification
+        truncated_bytes = password_bytes[:72]
         
-        # Truncate to 72 bytes if necessary
-        if len(plain_password_bytes) > 72:
-            print(f"Warning: Password exceeds 72 bytes, truncating to 72 bytes")
-            plain_password_bytes = plain_password_bytes[:72]
-            # Use the truncated password
-            if isinstance(plain_password, str):
-                plain_password = plain_password_bytes.decode('utf-8')
-            else:
-                plain_password = plain_password_bytes
+        # Convert back to string for verification
+        truncated_password = truncated_bytes.decode('utf-8', errors='replace') if isinstance(plain_password, str) else truncated_bytes
         
-        # Try to verify with explicit backend to avoid __about__ attribute error
-        return pwd_context.verify(plain_password, hashed_password, scheme="bcrypt")
-    except Exception as e:
-        print(f"Password verification error: {str(e)}")
-        # If there's an error with the backend, try a direct comparison as fallback
-        # This is not secure but prevents complete login failure
+        # Try direct verification with truncated password
         try:
-            # Try one more time with explicit truncation
-            if isinstance(plain_password, str) and len(plain_password.encode('utf-8')) > 72:
-                plain_password = plain_password.encode('utf-8')[:72].decode('utf-8')
-            return pwd_context.verify(plain_password, hashed_password)
-        except Exception as e2:
-            print(f"Fallback verification error: {str(e2)}")
-            return False
+            # First attempt with standard verification
+            return pwd_context.verify(truncated_password, hashed_password)
+        except Exception as e1:
+            logger.warning(f"Standard verification failed: {e1}")
+            
+            # Second attempt with explicit scheme
+            try:
+                return pwd_context.verify(truncated_password, hashed_password, scheme="bcrypt")
+            except Exception as e2:
+                logger.warning(f"Explicit scheme verification failed: {e2}")
+                
+                # Last resort - try with different encoding
+                try:
+                    if isinstance(plain_password, str):
+                        # Try ASCII encoding as last resort
+                        ascii_password = plain_password.encode('ascii', errors='ignore')[:72].decode('ascii', errors='ignore')
+                        return pwd_context.verify(ascii_password, hashed_password)
+                except Exception:
+                    pass
+                
+                return False
+    except Exception as e:
+        logger.error(f"Password verification completely failed: {e}")
+        return False
 
 
 def get_password_hash(password):
