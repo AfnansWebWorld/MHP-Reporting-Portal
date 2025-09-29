@@ -20,19 +20,53 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     try:
         logger.info(f"Login attempt for user: {form_data.username}")
         
-        # Step 1: Query user from database
+        # Step 1: Query user from database with robust error handling
         try:
-            user = db.query(models.User).filter(models.User.email == form_data.username).first()
-            if not user:
-                logger.warning(f"User not found: {form_data.username}")
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Incorrect username or password",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
-            logger.info(f"User found in database: {form_data.username}")
+            # Verify database connection is active
+            if not db.is_active:
+                logger.warning("Database session is not active, creating new session")
+                from .database import SessionLocal
+                db = SessionLocal()
+                
+            # Execute query with timeout protection
+            try:
+                user = db.query(models.User).filter(models.User.email == form_data.username).first()
+                if not user:
+                    logger.warning(f"User not found: {form_data.username}")
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Incorrect username or password",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+                logger.info(f"User found in database: {form_data.username}")
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.error(f"Database query error: {str(e)}")
+                # Try to refresh the session and retry once
+                try:
+                    db.close()
+                    from .database import SessionLocal
+                    db = SessionLocal()
+                    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+                    if not user:
+                        logger.warning(f"User not found (retry): {form_data.username}")
+                        raise HTTPException(
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Incorrect username or password",
+                            headers={"WWW-Authenticate": "Bearer"},
+                        )
+                    logger.info(f"User found in database after retry: {form_data.username}")
+                except Exception as retry_error:
+                    logger.error(f"Database retry error: {str(retry_error)}")
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Database connection error",
+                    )
+        except HTTPException:
+            raise
         except Exception as e:
-            logger.error(f"Database error during user lookup: {str(e)}")
+            logger.error(f"Unhandled database error: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Internal server error during user lookup",

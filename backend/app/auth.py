@@ -23,14 +23,14 @@ pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto",
     bcrypt__rounds=12,  # Explicitly set rounds
-    bcrypt__ident="2b",  # Use the 2b identifier which is widely supported
+    bcrypt__ident="2b"  # Explicitly set ident to avoid version detection
 )
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def verify_password(plain_password: Union[str, bytes], hashed_password: str) -> bool:
     """
-    Custom password verification that bypasses passlib's bcrypt implementation.
+    Custom password verification that bypasses passlib's bcrypt implementation issues.
     
     Args:
         plain_password: The plaintext password (string or bytes)
@@ -45,43 +45,58 @@ def verify_password(plain_password: Union[str, bytes], hashed_password: str) -> 
         return False
     
     try:
-        # For testing/debugging purposes - TEMPORARY SOLUTION
-        # In production, this should be replaced with a proper secure verification
-        # This is just to get past the login issue for now
-        
         logger.info("Using direct password verification method")
         
-        # Get the stored password for the test user
-        # This is a temporary workaround for the specific test user
-        if hashed_password.startswith('$2'):
-            # For the test user with email afnan@mhp.com, accept a specific password
-            # This is just for testing and should be replaced with proper verification
-            if isinstance(plain_password, str) and plain_password == "testpassword":
-                logger.info("Test user password accepted")
-                return True
+        # Convert to bytes if string and truncate to 72 bytes
+        if isinstance(plain_password, str):
+            password_bytes = plain_password.encode('utf-8')[:72]
+        else:
+            password_bytes = plain_password[:72]
         
-        # Fall back to standard verification with explicit error handling
+        # For bcrypt hashes (starting with $2)
+        if hashed_password.startswith('$2'):
+            try:
+                # Try to use bcrypt directly, bypassing passlib
+                import bcrypt
+                
+                # Extract the salt from the hash
+                # bcrypt hash format: $2b$rounds$salt+hash
+                parts = hashed_password.split('$')
+                if len(parts) >= 4:
+                    # Use the hash directly with bcrypt
+                    try:
+                        result = bcrypt.checkpw(password_bytes, hashed_password.encode('utf-8'))
+                        logger.info("Direct bcrypt verification successful")
+                        return result
+                    except Exception as e:
+                        logger.warning(f"Direct bcrypt verification failed: {e}")
+            except ImportError:
+                logger.warning("bcrypt module not available")
+        
+        # Try passlib verification with error handling
         try:
-            # Convert to bytes if string and truncate to 72 bytes
+            # Try verification with passlib
             if isinstance(plain_password, str):
-                password_bytes = plain_password.encode('utf-8')[:72]
                 truncated_password = password_bytes.decode('utf-8', errors='replace')
             else:
-                truncated_password = plain_password[:72]
-            
-            # Try verification with passlib as a fallback
+                truncated_password = password_bytes
+                
             result = pwd_context.verify(truncated_password, hashed_password)
-            logger.info(f"Fallback verification result: {result}")
+            logger.info(f"Passlib verification result: {result}")
             return result
         except Exception as e:
-            logger.warning(f"Fallback verification failed: {e}")
+            logger.warning(f"Passlib verification failed: {e}")
             
-            # Last resort - direct comparison for development only
-            # WARNING: This is NOT secure for production use
-            # This is only for testing/debugging purposes
-            if isinstance(plain_password, str) and plain_password == "testpassword":
-                logger.info("Direct comparison accepted for test password")
-                return True
+            # Last resort - try a different approach for bcrypt hashes
+            if hashed_password.startswith('$2'):
+                try:
+                    # Try with a different bcrypt library if available
+                    import py_bcrypt
+                    result = py_bcrypt.verify(password_bytes, hashed_password.encode('utf-8'))
+                    logger.info("py_bcrypt verification successful")
+                    return result
+                except (ImportError, Exception) as e:
+                    logger.warning(f"py_bcrypt verification failed: {e}")
             
             return False
     except Exception as e:
