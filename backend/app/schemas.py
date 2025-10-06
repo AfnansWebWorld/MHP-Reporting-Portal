@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+from pydantic import validator  # Fallback for older Pydantic versions
 from typing import Optional, List, Union
 from datetime import datetime, date
 from enum import Enum
@@ -23,6 +24,11 @@ class UserBase(BaseModel):
     role: Role = Role.user
     has_outstation_access: Optional[bool] = False
 
+    @property
+    def role_value(self) -> str:
+        """Get the string value of the role"""
+        return self.role.value
+
 class UserCreate(UserBase):
     password: str
 
@@ -37,9 +43,25 @@ class UserOut(UserBase):
     is_active: bool
     submissions_count: Optional[int] = 0
     has_outstation_access: bool = False
+    role: str  # Override to ensure string serialization
 
     class Config:
         from_attributes = True
+    
+    @field_validator('role', mode='before')
+    def convert_role_to_string(cls, v):
+        """Convert Role enum to string"""
+        if hasattr(v, 'value'):
+            return v.value
+        return str(v)
+    
+    # Fallback for older Pydantic versions
+    @validator('role', pre=True)
+    def convert_role_to_string_fallback(cls, v):
+        """Convert Role enum to string (fallback)"""
+        if hasattr(v, 'value'):
+            return v.value
+        return str(v)
 
 class Token(BaseModel):
     access_token: str
@@ -184,12 +206,43 @@ class OutStationExpenseOut(OutStationExpenseBase):
     month: str
     created_at: datetime
     pdf_report_id: Optional[int] = None
+    station: str  # Override to ensure string serialization
+    travelling: str  # Override to ensure string serialization
     
     class Config:
         from_attributes = True
         json_encoders = {
             date: lambda v: v.isoformat()
         }
+    
+    @field_validator('station', mode='before')
+    def convert_station_to_string(cls, v):
+        """Convert StationType enum to string"""
+        if hasattr(v, 'value'):
+            return v.value
+        return str(v)
+    
+    @field_validator('travelling', mode='before')
+    def convert_travelling_to_string(cls, v):
+        """Convert TravellingType enum to string"""
+        if hasattr(v, 'value'):
+            return v.value
+        return str(v)
+    
+    # Fallback for older Pydantic versions
+    @validator('station', pre=True)
+    def convert_station_to_string_fallback(cls, v):
+        """Convert StationType enum to string (fallback)"""
+        if hasattr(v, 'value'):
+            return v.value
+        return str(v)
+    
+    @validator('travelling', pre=True)
+    def convert_travelling_to_string_fallback(cls, v):
+        """Convert TravellingType enum to string (fallback)"""
+        if hasattr(v, 'value'):
+            return v.value
+        return str(v)
 
 class OutStationExpensePermissionUpdate(BaseModel):
     user_id: int

@@ -79,15 +79,32 @@ const OutStationExpensePage = () => {
     fetchExpenses()
   }, [selectedMonth, hasAccess])
 
-  const savePdf = async (month: string) => {
+  const saveAndDownloadPdf = async (month: string) => {
     try {
-      await api.post('/pdf/outstation/save', { month })
+      const saveResponse = await api.post('/pdf/outstation/save', { month })
       toast.success('PDF saved successfully!')
+      
+      // Now download the PDF that was just saved
+      if (saveResponse.data && saveResponse.data.pdf_id) {
+        const downloadResponse = await api.get(`/pdf/outstation/${saveResponse.data.pdf_id}`, {
+          responseType: 'blob'
+        })
+        
+        // Create a blob URL and trigger download
+        const url = window.URL.createObjectURL(new Blob([downloadResponse.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `outstation-expense-${month.replace(' ', '-')}.pdf`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+      }
+      
       // Refresh expenses to show updated PDF status
       fetchExpenses()
     } catch (error) {
-      console.error('Failed to save PDF:', error)
-      toast.error('Failed to save PDF')
+      console.error('Failed to save/download PDF:', error)
+      toast.error('Failed to save and download PDF')
     }
   }
 
@@ -164,7 +181,7 @@ const OutStationExpensePage = () => {
         setSelectedMonth(submittedMonth)
         
         // Save PDF for the month after submitting expense
-        await savePdf(submittedMonth)
+        await saveAndDownloadPdf(submittedMonth)
       }
     } catch (error: any) {
       console.error('Failed to submit expense:', error)
@@ -184,7 +201,7 @@ const OutStationExpensePage = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-full">
+        <div className="flex justify-center items-center h-full">
           <div className="text-gray-500">Loading...</div>
         </div>
       </Layout>
@@ -194,8 +211,8 @@ const OutStationExpensePage = () => {
   if (!hasAccess) {
     return (
       <Layout>
-        <div className="flex flex-col items-center justify-center h-full">
-          <div className="text-red-500 mb-2">You don't have access to this feature.</div>
+        <div className="flex flex-col justify-center items-center h-full">
+          <div className="mb-2 text-red-500">You don't have access to this feature.</div>
           <div className="text-gray-500">Please contact your administrator.</div>
         </div>
       </Layout>
@@ -204,17 +221,17 @@ const OutStationExpensePage = () => {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="mx-auto space-y-6 max-w-6xl">
         {/* Expense List */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-gray-800 px-6 py-4 flex justify-between items-center">
+        <div className="overflow-hidden bg-white rounded-lg shadow-md">
+          <div className="flex justify-between items-center px-6 py-4 bg-gray-800">
             <h1 className="text-xl font-bold text-white">My Out Station Expenses</h1>
             <div className="flex items-center space-x-3">
               {availableMonths.length > 0 && (
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="px-3 py-1 rounded-md text-sm bg-gray-700 text-white border border-gray-600"
+                  className="px-3 py-1 text-sm text-white bg-gray-700 rounded-md border border-gray-600"
                 >
                   {availableMonths.map((month) => (
                     <option key={month} value={month}>{month}</option>
@@ -223,10 +240,10 @@ const OutStationExpensePage = () => {
               )}
               {selectedMonth && (
                 <button
-                  onClick={() => savePdf(selectedMonth)}
-                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs"
+                  onClick={() => saveAndDownloadPdf(selectedMonth)}
+                  className="px-3 py-1 text-xs text-white bg-blue-600 rounded-md hover:bg-blue-700"
                 >
-                  Generate PDF
+                  Save & Download PDF
                 </button>
               )}
             </div>
@@ -234,9 +251,9 @@ const OutStationExpensePage = () => {
           
           <div className="p-6">
             {loadingExpenses ? (
-              <div className="text-center py-4 text-gray-500">Loading expenses...</div>
+              <div className="py-4 text-center text-gray-500">Loading expenses...</div>
             ) : expenses.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
+              <div className="py-4 text-center text-gray-500">
                 No expenses found for {selectedMonth || 'the selected month'}.
               </div>
             ) : (
@@ -244,36 +261,21 @@ const OutStationExpensePage = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Station</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Travelling</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KM</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CSR Verified</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PDF Status</th>
+                      <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Date</th>
+                      <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Station</th>
+                      <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Travelling</th>
+                      <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">KM</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {expenses.map((exp) => (
                       <tr key={exp.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                           {new Date(exp.day).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{exp.station}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{exp.travelling}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{exp.km_travelled}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{exp.csr_verified}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {exp.pdf_report_id ? (
-                            <button
-                              onClick={() => downloadPdf(exp.pdf_report_id!)}
-                              className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs hover:bg-green-200"
-                            >
-                              Download PDF
-                            </button>
-                          ) : (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Not Generated</span>
-                          )}
-                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{exp.station}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{exp.travelling}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{exp.km_travelled}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -284,16 +286,16 @@ const OutStationExpensePage = () => {
         </div>
         
         {/* Expense Form */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-gray-800 px-6 py-4">
+        <div className="overflow-hidden bg-white rounded-lg shadow-md">
+          <div className="px-6 py-4 bg-gray-800">
             <h1 className="text-xl font-bold text-white">Submit New Expense</h1>
           </div>
           
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Day */}
             <div>
-              <label htmlFor="day" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="day" className="block mb-1 text-sm font-medium text-gray-700">
                 Day
               </label>
               <input
@@ -302,14 +304,14 @@ const OutStationExpensePage = () => {
                 name="day"
                 value={expense.day}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
             
             {/* Station */}
             <div>
-              <label htmlFor="station" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="station" className="block mb-1 text-sm font-medium text-gray-700">
                 Station
               </label>
               <select
@@ -317,7 +319,7 @@ const OutStationExpensePage = () => {
                 name="station"
                 value={expense.station}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
                 <option value="Base Station">Base Station</option>
@@ -328,7 +330,7 @@ const OutStationExpensePage = () => {
             
             {/* Travelling */}
             <div>
-              <label htmlFor="travelling" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="travelling" className="block mb-1 text-sm font-medium text-gray-700">
                 Travelling
               </label>
               <select
@@ -336,7 +338,7 @@ const OutStationExpensePage = () => {
                 name="travelling"
                 value={expense.travelling}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
                 <option value="1-way">1-way</option>
@@ -346,7 +348,7 @@ const OutStationExpensePage = () => {
             
             {/* KM-Travelled */}
             <div>
-              <label htmlFor="km_travelled" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="km_travelled" className="block mb-1 text-sm font-medium text-gray-700">
                 KM-Travelled
               </label>
               <input
@@ -355,33 +357,19 @@ const OutStationExpensePage = () => {
                 name="km_travelled"
                 value={expense.km_travelled}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 min="0"
                 step="0.1"
                 required
               />
             </div>
             
-            {/* CSR Verified */}
-            <div>
-              <label htmlFor="csr_verified" className="block text-sm font-medium text-gray-700 mb-1">
-                CSR Verified
-              </label>
-              <input
-                type="text"
-                id="csr_verified"
-                name="csr_verified"
-                value={expense.csr_verified}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                required
-              />
-            </div>
+
           </div>
           
           {/* Summary Of Activity */}
           <div>
-            <label htmlFor="summary_of_activity" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="summary_of_activity" className="block mb-1 text-sm font-medium text-gray-700">
               Summary Of Activity
             </label>
             <textarea
@@ -390,7 +378,7 @@ const OutStationExpensePage = () => {
               value={expense.summary_of_activity}
               onChange={handleChange}
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>

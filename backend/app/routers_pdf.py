@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, Depends, Response, HTTPException
+from fastapi import APIRouter, Depends, Response, HTTPException, Body, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import date, datetime
@@ -121,7 +121,7 @@ def save_my_pdf(request: SavePDFRequest = None, db: Session = Depends(get_db), u
 # Out Station Expense PDF endpoints
 @router.get("/outstation", response_class=Response)
 def get_outstation_expense_pdf(
-    month: Optional[str] = None,
+    month: Optional[str] = Query(None),
     db: Session = Depends(get_db), 
     user=Depends(check_outstation_access)
 ):
@@ -154,10 +154,11 @@ def get_outstation_expense_pdf(
 
 @router.post("/outstation/save")
 def save_outstation_expense_pdf(
-    month: Optional[str] = None,
+    request: dict = Body(...),
     db: Session = Depends(get_db), 
     user=Depends(check_outstation_access)
 ):
+    month = request.get("month")
     """Save PDF for out station expenses to database"""
     query = db.query(models.OutStationExpense).filter(models.OutStationExpense.user_id == user.id)
     
@@ -200,7 +201,7 @@ def save_outstation_expense_pdf(
             expense.pdf_report_id = pdf_report.id
         db.commit()
         
-        return {"status": "saved", "filename": filename}
+        return {"status": "saved", "filename": filename, "pdf_id": pdf_report.id}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -306,13 +307,14 @@ def view_pdf(pdf_id: int, db: Session = Depends(get_db), admin=Depends(require_a
     
     return Response(content=pdf_report.pdf_data, media_type="application/pdf")
 
-@router.get("/outstation/generate_monthly/", name="generate_outstation_monthly_pdf")
-def generate_outstation_monthly_pdf(
-    month: str,
-    user_id: Optional[int] = None,
+@router.post("/admin/outstation/generate")
+def admin_generate_outstation_pdf(
+    request: dict = Body(...),
     db: Session = Depends(get_db),
     current_user=Depends(require_admin)
 ):
+    month = request.get("month")
+    user_id = request.get("user_id")
     """Generate a monthly PDF for outstation expenses (admin only)
     
     This endpoint allows admins to generate PDFs for a specific month,
