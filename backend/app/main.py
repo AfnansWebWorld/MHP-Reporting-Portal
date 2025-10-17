@@ -65,6 +65,8 @@ from .routers_giveaways import router as giveaways_router
 app.include_router(giveaways_router)
 from .routers_outstation import router as outstation_router
 app.include_router(outstation_router)
+from .routers_client_assignments import router as client_assignments_router
+app.include_router(client_assignments_router)
 
 @app.get("/")
 def root():

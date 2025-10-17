@@ -183,6 +183,6 @@ def check_outstation_access(user: models.User = Depends(get_current_active_user)
     if not user.has_outstation_access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not have access to Out Station Expense feature"
+            detail="User does not have access to the TADA expense feature"
         )
     return user

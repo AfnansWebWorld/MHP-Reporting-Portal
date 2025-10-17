@@ -70,6 +70,38 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     user_id: int
     role: Role
+    
+class ClientAssignmentBase(BaseModel):
+    client_id: int
+    junior_id: int
+    manager_id: int
+    
+class ClientAssignmentCreate(ClientAssignmentBase):
+    pass
+    
+class ClientAssignmentOut(ClientAssignmentBase):
+    id: int
+    assigned_at: datetime
+    is_active: bool
+    
+    class Config:
+        from_attributes = True
+        
+class ClientAccessLogBase(BaseModel):
+    client_id: int
+    action_type: str
+    details: Optional[str] = None
+    
+class ClientAccessLogCreate(ClientAccessLogBase):
+    pass
+    
+class ClientAccessLogOut(ClientAccessLogBase):
+    id: int
+    user_id: int
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
 
 class ClientBase(BaseModel):
     name: str
@@ -82,11 +114,21 @@ class ClientBase(BaseModel):
 class ClientCreate(ClientBase):
     pass
 
+class ClientUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    phone2: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    store_name: Optional[str] = None
+
 class ClientOut(ClientBase):
     id: int
     user_id: int
     created_at: datetime
     user: Optional['UserOut'] = None
+    is_assigned: bool = False
+    assigned_by: Optional[str] = None
 
     class Config:
         from_attributes = True

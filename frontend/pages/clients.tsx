@@ -14,6 +14,8 @@ interface Client {
   store_name?: string
   user_id: number
   created_at: string
+  is_assigned?: boolean
+  assigned_by?: string
 }
 
 interface CurrentUser {
@@ -429,13 +431,20 @@ export default function Clients() {
             {clients.map(client => (
               <div key={client.id} className="p-6 flex items-center justify-between hover:bg-gray-50 transition-all duration-200">
                 <div className="flex items-center space-x-4 flex-1">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <div className={`w-12 h-12 ${client.is_assigned 
+                    ? 'bg-purple-100' 
+                    : 'bg-blue-100'} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                    <svg className={`w-6 h-6 ${client.is_assigned ? 'text-purple-600' : 'text-blue-600'}`} fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path>
                     </svg>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-gray-900 text-lg">{client.name}</div>
+                    <div className="font-semibold text-gray-900 text-lg">{client.name}
+                      {client.is_assigned && (
+                        <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          Assigned {client.assigned_by && `by ${client.assigned_by}`}
+                        </span>
+                      )}</div>
                     <div className="text-sm text-gray-600 space-y-1 mt-1">
                       <div className="flex items-center">
                         <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">

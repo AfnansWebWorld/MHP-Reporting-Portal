@@ -19,8 +19,11 @@ def format_currency(amount: float) -> str:
         return f"Rs. {amount:,.2f}"
 
 
+TRAVEL_ALLOWANCE_RATE = 8
+
+
 def generate_outstation_expense_pdf(user: models.User, expenses: List[models.OutStationExpense]) -> bytes:
-    """Generate a PDF report for Out Station Expenses"""
+    """Generate a PDF report for TADA expenses"""
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
@@ -42,7 +45,7 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
     # Add title with bold and prominent styling
     c.setFont("Helvetica-Bold", 18)  # Increased font size
     c.setFillColorRGB(0, 0, 0.5)  # Dark blue color for title
-    title_text = f"OUT STATION EXPENSES"
+    title_text = f"TADA EXPENSES"
     c.drawString(1 * inch, height - 0.7 * inch, title_text)
     
     # Add user name with better styling
@@ -87,9 +90,33 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
     else:
         y = height - 1.6 * inch  # Reduced space (was 2.0)
 
-    headers = ["Date", "Station", "Travelling", "KM Travelled", "CSR Verified", "Summary"]
-    col_x = [0.25*inch, 0.75*inch, 2.0*inch, 3.2*inch, 4.4*inch, 5.6*inch]
-    col_widths = [0.5*inch, 1.25*inch, 1.2*inch, 1.2*inch, 1.2*inch, 2.6*inch]
+    headers = [
+        "Date",
+        "Station",
+        "Travelling",
+        "KM Travelled",
+        "Total (PKR)",
+        "CSR Verified",
+        "Summary"
+    ]
+    col_x = [
+        0.25 * inch,
+        0.85 * inch,
+        2.15 * inch,
+        3.35 * inch,
+        4.45 * inch,
+        5.55 * inch,
+        6.65 * inch
+    ]
+    col_widths = [
+        0.6 * inch,
+        1.3 * inch,
+        1.2 * inch,
+        1.1 * inch,
+        1.1 * inch,
+        1.1 * inch,
+        1.55 * inch
+    ]
 
     # Draw header background with improved styling
     header_y = y
@@ -161,19 +188,13 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
             c.setFont("Helvetica-Bold", 11)  # Increased font size for headers
             header_y = y
             for i, h in enumerate(headers):
-                # Center align Day column
-                if i == 0:
-                    text_width = c.stringWidth(h, "Helvetica-Bold", 11)
-                    x_pos = col_x[i] + ((col_x[i+1] - col_x[i]) - text_width) / 2
-                    c.drawString(x_pos, y - 0.05 * inch, h)
-                # Right align KM Travelled column
-                elif i == 3:
-                    text_width = c.stringWidth(h, "Helvetica-Bold", 11)
-                    x_pos = col_x[i+1] - text_width - 0.08 * inch
-                    c.drawString(x_pos, y - 0.05 * inch, h)
-                # Left align other columns
+                text_width = c.stringWidth(h, "Helvetica-Bold", 11)
+                if i < len(col_x) - 1:
+                    col_center = col_x[i] + (col_x[i+1] - col_x[i]) / 2
                 else:
-                    c.drawString(col_x[i] + 0.08 * inch, y - 0.05 * inch, h)
+                    col_center = col_x[i] + (8.2*inch - col_x[i]) / 2
+                text_x = col_center - (text_width / 2)
+                c.drawString(text_x, y - 0.05 * inch, h)
             
             c.setFont("Helvetica", 10)
             y -= 0.25 * inch  # Increased spacing for header bottom
@@ -224,20 +245,27 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
         km_width = c.stringWidth(km_text, "Helvetica", 10)
         km_x = col_x[4] - km_width - text_padding
         c.drawString(km_x, text_y_position, km_text)
-        
+
+        # Total amount - right align
+        total_amount = (expense.km_travelled or 0) * TRAVEL_ALLOWANCE_RATE
+        total_text = format_currency(total_amount)
+        total_width = c.stringWidth(total_text, "Helvetica", 10)
+        total_x = col_x[5] - total_width - text_padding
+        c.drawString(total_x, text_y_position, total_text)
+
         # CSR Verified column left empty
-        c.drawString(col_x[4] + text_padding, text_y_position, "")
-        
+        c.drawString(col_x[5] + text_padding, text_y_position, "")
+
         # Summary of Activity - Handle multi-line text with improved wrapping and left alignment
         summary_text = expense.summary_of_activity
         max_chars_per_line = 25  # Adjusted for better fit in column width
-        
+
         summary_lines = []
         if len(summary_text) > max_chars_per_line:
             words = summary_text.split()
             current_line = ""
             lines = []
-            
+
             for word in words:
                 test_line = current_line + (" " if current_line else "") + word
                 if len(test_line) <= max_chars_per_line:
@@ -246,22 +274,22 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
                     if current_line:
                         lines.append(current_line)
                     current_line = word
-            
+
             if current_line:
                 lines.append(current_line)
-            
+
             summary_lines = lines
         else:
             summary_lines = [summary_text]
-        
+
         # Calculate row height based on summary lines with adequate space
         max_lines = len(summary_lines)
         row_height = max(0.18 * inch, 0.18 * inch * max_lines)  # Increased row height by 0.1 inch
-        
+
         # Draw summary text (potentially multi-line) with increased spacing
         for i, line in enumerate(summary_lines):
             summary_y = text_y_position - (i * 0.08 * inch)  # Increased line spacing for multi-line summaries
-            c.drawString(col_x[5] + text_padding, summary_y, line.strip())
+            c.drawString(col_x[6] + text_padding, summary_y, line.strip())
         
         # Draw cell borders for this row with Excel-like grid (compact size)
         # For Excel-like appearance with smaller cells
@@ -317,7 +345,12 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
     count_data = []
     
     # Create a table with headers in the first row
-    table_headers = ["Station Count Totals:", "Travelling Count Totals:", "Total KM Travelled:"]
+    table_headers = [
+        "Station Count Totals:",
+        "Travelling Count Totals:",
+        "Total KM Travelled:",
+        "Total Amount:"
+    ]
     count_data.append(table_headers)
     
     # Prepare data rows
@@ -333,8 +366,9 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
     for travelling, count in travelling_counts.items():
         travelling_rows.append(f"{travelling}: {count}")
     
-    # Calculate total KM
+    # Calculate totals
     total_km = sum(expense.km_travelled for expense in expenses)
+    total_amount = sum((expense.km_travelled or 0) * TRAVEL_ALLOWANCE_RATE for expense in expenses)
     
     # Ensure both columns have the same number of rows
     while len(station_rows) < max_items:
@@ -342,33 +376,44 @@ def generate_outstation_expense_pdf(user: models.User, expenses: List[models.Out
     while len(travelling_rows) < max_items:
         travelling_rows.append("")
     
-    # Add all rows to the table data with total KM in the first row of third column
+    # Add all rows to the table data with totals in the first row of the last columns
     for i in range(max_items):
         if i == 0:
-            count_data.append([station_rows[i], travelling_rows[i], f"{total_km:.1f}"])
+            count_data.append([
+                station_rows[i],
+                travelling_rows[i],
+                f"{total_km:.1f}",
+                format_currency(total_amount)
+            ])
         else:
-            count_data.append([station_rows[i], travelling_rows[i], ""])
+            count_data.append([station_rows[i], travelling_rows[i], "", ""])
     
     # Set up the table with better styling
-    count_table = Table(count_data, colWidths=[2.7*inch, 2.7*inch, 2.7*inch])
+    count_table = Table(count_data, colWidths=[2.1*inch, 2.1*inch, 2.0*inch, 2.0*inch])
     
     # Enhanced styling for the count totals table with reduced padding for compact layout
     count_table_style = TableStyle([
         ('BOX', (0, 0), (-1, -1), 1.5, colors.black),  # Thicker outer border
         ('GRID', (0, 0), (-1, -1), 0.5, colors.black),  # Grid lines for all cells
-        ('BACKGROUND', (0, 0), (0, 0), colors.lightgrey),  # Header background
-        ('BACKGROUND', (1, 0), (1, 0), colors.lightgrey),  # Header background
-        ('BACKGROUND', (2, 0), (2, 0), colors.lightgrey),  # Header background for KM
-        ('BACKGROUND', (2, 1), (2, 1), colors.lavender),  # Highlight background for KM value
-        ('BOX', (2, 1), (2, 1), 1.5, colors.black),  # Thicker border for KM value
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Bold header
-        ('FONTNAME', (2, 1), (2, 1), 'Helvetica-Bold'),  # Bold KM value
+    ('BACKGROUND', (0, 0), (0, 0), colors.lightgrey),  # Header background
+    ('BACKGROUND', (1, 0), (1, 0), colors.lightgrey),  # Header background
+    ('BACKGROUND', (2, 0), (2, 0), colors.lightgrey),  # Header background for KM
+    ('BACKGROUND', (3, 0), (3, 0), colors.lightgrey),  # Header background for amount
+    ('BACKGROUND', (2, 1), (2, 1), colors.lavender),  # Highlight background for KM value
+    ('BACKGROUND', (3, 1), (3, 1), colors.lavender),  # Highlight background for amount value
+    ('BOX', (2, 1), (2, 1), 1.5, colors.black),  # Thicker border for KM value
+    ('BOX', (3, 1), (3, 1), 1.5, colors.black),  # Thicker border for amount value
+    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Bold header
+    ('FONTNAME', (2, 1), (2, 1), 'Helvetica-Bold'),  # Bold KM value
+    ('FONTNAME', (3, 1), (3, 1), 'Helvetica-Bold'),  # Bold amount value
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),  # Center align headers
         ('ALIGN', (0, 1), (-1, -1), 'LEFT'),  # Left align content
-        ('ALIGN', (2, 1), (2, 1), 'CENTER'),  # Center align KM value
+    ('ALIGN', (2, 1), (2, 1), 'CENTER'),  # Center align KM value
+    ('ALIGN', (3, 1), (3, 1), 'CENTER'),  # Center align amount value
         ('FONTSIZE', (0, 0), (-1, 0), 10),  # Reduced font size for headers
         ('FONTSIZE', (0, 1), (-1, -1), 9),  # Reduced font size for content
-        ('FONTSIZE', (2, 1), (2, 1), 10),  # Reduced font size for KM value
+    ('FONTSIZE', (2, 1), (2, 1), 10),  # Reduced font size for KM value
+    ('FONTSIZE', (3, 1), (3, 1), 10),  # Reduced font size for amount value
         ('BOTTOMPADDING', (0, 0), (-1, 0), 4),  # Reduced header padding
         ('TOPPADDING', (0, 0), (-1, 0), 4),  # Reduced header padding
         ('BOTTOMPADDING', (0, 1), (-1, -1), 2),  # Reduced cell padding

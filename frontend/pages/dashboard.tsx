@@ -5,7 +5,16 @@ import { useRouter } from 'next/router'
 import Cookies from 'js-cookie'
 import DateSelectionModal from '../components/DateSelectionModal'
 
-interface Client { id: number; name: string; phone: string; address: string; user_id: number; created_at: string }
+interface Client { 
+  id: number; 
+  name: string; 
+  phone: string; 
+  address: string; 
+  user_id: number; 
+  created_at: string;
+  is_assigned?: boolean;
+  assigned_by?: string;
+}
 interface Report { id: number; client: Client; shift_timing: string; payment_received: boolean; payment_amount: number; physician_sample: boolean; order_received: boolean; created_at: string }
 interface VisitStats { daily_visits: number; monthly_visits: number; total_visits: number }
 interface GiveawayAssignment {
@@ -63,12 +72,20 @@ export default function Dashboard() {
     const load = async () => {
       try {
         const [c, r, v, g] = await Promise.all([
-          api.get('/clients/'),
+          api.get('/clients/dashboard'), // Use the dashboard endpoint to get both owned and assigned clients
           api.get('/reports/me'),
           api.get('/visits/stats'),
           api.get('/giveaways/my-giveaways'),
         ])
-        setClients(c.data)
+        const dashboardClients = Array.isArray(c.data?.clients)
+          ? c.data.clients
+          : [
+              ...(Array.isArray(c.data?.own_clients) ? c.data.own_clients : []),
+              ...(Array.isArray(c.data?.assigned_clients)
+                ? c.data.assigned_clients.flatMap((group: any) => group?.clients ?? [])
+                : []),
+            ]
+        setClients(dashboardClients)
         setReports(r.data)
         setVisitStats(v.data)
         setGiveawayAssignments(g.data)
@@ -405,7 +422,9 @@ export default function Dashboard() {
                     setSelectedClient(c)
                   }}>
                     <option value="">Select a client</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {clients.map(c => <option key={c.id} value={c.id}>
+                      {c.name} {c.is_assigned && '(Assigned)'}
+                    </option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -158,8 +158,8 @@ const OutStationExpensePage = () => {
         return
       }
 
-      await api.post('/outstation/expenses', expense)
-      toast.success('Out Station Expense report submitted successfully!')
+    await api.post('/outstation/expenses', expense)
+    toast.success('TADA expense report submitted successfully!')
       
       // Reset form
       setExpense({
@@ -222,10 +222,118 @@ const OutStationExpensePage = () => {
   return (
     <Layout>
       <div className="mx-auto space-y-6 max-w-6xl">
+        {/* Expense Form */}
+        <div className="overflow-hidden bg-white rounded-lg shadow-md">
+          <div className="px-6 py-4 bg-gray-800">
+            <h1 className="text-xl font-bold text-white">Submit New Expense</h1>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {/* Day */}
+              <div>
+                <label htmlFor="day" className="block mb-1 text-sm font-medium text-gray-700">
+                  Day
+                </label>
+                <input
+                  type="date"
+                  id="day"
+                  name="day"
+                  value={expense.day}
+                  onChange={handleChange}
+                  className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Station */}
+              <div>
+                <label htmlFor="station" className="block mb-1 text-sm font-medium text-gray-700">
+                  Station
+                </label>
+                <select
+                  id="station"
+                  name="station"
+                  value={expense.station}
+                  onChange={handleChange}
+                  className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="Base Station">Base Station</option>
+                  <option value="Ex.">Ex.</option>
+                  <option value="Night Stay">Night Stay</option>
+                </select>
+              </div>
+
+              {/* Travelling */}
+              <div>
+                <label htmlFor="travelling" className="block mb-1 text-sm font-medium text-gray-700">
+                  Travelling
+                </label>
+                <select
+                  id="travelling"
+                  name="travelling"
+                  value={expense.travelling}
+                  onChange={handleChange}
+                  className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="1-way">1-way</option>
+                  <option value="2-way">2-way</option>
+                </select>
+              </div>
+
+              {/* KM-Travelled */}
+              <div>
+                <label htmlFor="km_travelled" className="block mb-1 text-sm font-medium text-gray-700">
+                  KM-Travelled
+                </label>
+                <input
+                  type="number"
+                  id="km_travelled"
+                  name="km_travelled"
+                  value={expense.km_travelled}
+                  onChange={handleChange}
+                  className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                  step="0.1"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Summary Of Activity */}
+            <div>
+              <label htmlFor="summary_of_activity" className="block mb-1 text-sm font-medium text-gray-700">
+                Summary Of Activity
+              </label>
+              <textarea
+                id="summary_of_activity"
+                name="summary_of_activity"
+                value={expense.summary_of_activity}
+                onChange={handleChange}
+                rows={4}
+                className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`px-6 py-2 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${submitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              >
+                {submitting ? 'Submitting...' : 'Submit Report'}
+              </button>
+            </div>
+          </form>
+        </div>
+
         {/* Expense List */}
         <div className="overflow-hidden bg-white rounded-lg shadow-md">
           <div className="flex justify-between items-center px-6 py-4 bg-gray-800">
-            <h1 className="text-xl font-bold text-white">My Out Station Expenses</h1>
+            <h1 className="text-xl font-bold text-white">My TADA Expenses</h1>
             <div className="flex items-center space-x-3">
               {availableMonths.length > 0 && (
                 <select
@@ -248,7 +356,7 @@ const OutStationExpensePage = () => {
               )}
             </div>
           </div>
-          
+
           <div className="p-6">
             {loadingExpenses ? (
               <div className="py-4 text-center text-gray-500">Loading expenses...</div>
@@ -284,116 +392,6 @@ const OutStationExpensePage = () => {
             )}
           </div>
         </div>
-        
-        {/* Expense Form */}
-        <div className="overflow-hidden bg-white rounded-lg shadow-md">
-          <div className="px-6 py-4 bg-gray-800">
-            <h1 className="text-xl font-bold text-white">Submit New Expense</h1>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Day */}
-            <div>
-              <label htmlFor="day" className="block mb-1 text-sm font-medium text-gray-700">
-                Day
-              </label>
-              <input
-                type="date"
-                id="day"
-                name="day"
-                value={expense.day}
-                onChange={handleChange}
-                className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            
-            {/* Station */}
-            <div>
-              <label htmlFor="station" className="block mb-1 text-sm font-medium text-gray-700">
-                Station
-              </label>
-              <select
-                id="station"
-                name="station"
-                value={expense.station}
-                onChange={handleChange}
-                className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="Base Station">Base Station</option>
-                <option value="Ex.">Ex.</option>
-                <option value="Night Stay">Night Stay</option>
-              </select>
-            </div>
-            
-            {/* Travelling */}
-            <div>
-              <label htmlFor="travelling" className="block mb-1 text-sm font-medium text-gray-700">
-                Travelling
-              </label>
-              <select
-                id="travelling"
-                name="travelling"
-                value={expense.travelling}
-                onChange={handleChange}
-                className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="1-way">1-way</option>
-                <option value="2-way">2-way</option>
-              </select>
-            </div>
-            
-            {/* KM-Travelled */}
-            <div>
-              <label htmlFor="km_travelled" className="block mb-1 text-sm font-medium text-gray-700">
-                KM-Travelled
-              </label>
-              <input
-                type="number"
-                id="km_travelled"
-                name="km_travelled"
-                value={expense.km_travelled}
-                onChange={handleChange}
-                className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                min="0"
-                step="0.1"
-                required
-              />
-            </div>
-            
-
-          </div>
-          
-          {/* Summary Of Activity */}
-          <div>
-            <label htmlFor="summary_of_activity" className="block mb-1 text-sm font-medium text-gray-700">
-              Summary Of Activity
-            </label>
-            <textarea
-              id="summary_of_activity"
-              name="summary_of_activity"
-              value={expense.summary_of_activity}
-              onChange={handleChange}
-              rows={4}
-              className="px-4 py-2 w-full text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={submitting}
-              className={`px-6 py-2 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${submitting ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >
-              {submitting ? 'Submitting...' : 'Submit Report'}
-            </button>
-          </div>
-        </form>
-      </div>
       </div>
     </Layout>
   )

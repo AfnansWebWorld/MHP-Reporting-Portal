@@ -112,6 +112,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </svg>
                 Admin
               </Link>
+
+              <Link 
+                className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/admin-client-assignments' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
+                href="/admin-client-assignments"
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2a3 3 0 00-5.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2a3 3 0 015.356-1.857M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a3 3 0 11-6 0 3 3 0 016 0zM9 10a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Client Assignments
+              </Link>
+
+              <Link 
+                className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/admin-clients' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
+                href="/admin-clients"
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h10M7 11h10M7 15h6M17 17v2a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2h8a2 2 0 012 2v2" />
+                </svg>
+                Client Management
+              </Link>
               
               <Link 
                 className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/admin-outstation' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
@@ -120,7 +140,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                Out Station Management
+                TADA Management
               </Link>
               
               <Link 
@@ -181,7 +201,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </Link>
           )}
           
-          {user?.has_outstation_access && (
+              {user?.has_outstation_access && (
             <Link 
               className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${router.pathname === '/outstation-expense' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`} 
               href="/outstation-expense"
@@ -189,7 +209,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
               </svg>
-              Out Station Expense
+              TADA Expense
             </Link>
           )}
         </nav>
@@ -274,6 +294,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">⚙️</span>
                     <span className="font-medium">Admin</span>
                   </Link>
+
+                  <Link 
+                    href="/admin-client-assignments" 
+                    className={`group flex items-center px-4 py-3 rounded-xl ${router.pathname === '/admin-client-assignments' ? 'bg-blue-600 text-white border-blue-700' : 'text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'} backdrop-blur-sm border transition-all duration-300`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">🔀</span>
+                    <span className="font-medium">Client Assignments</span>
+                  </Link>
+
+                  <Link 
+                    href="/admin-clients" 
+                    className={`group flex items-center px-4 py-3 rounded-xl ${router.pathname === '/admin-clients' ? 'bg-blue-600 text-white border-blue-700' : 'text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'} backdrop-blur-sm border transition-all duration-300`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">📇</span>
+                    <span className="font-medium">Client Management</span>
+                  </Link>
                   
                   <Link 
                     href="/admin-outstation" 
@@ -281,7 +319,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">🚗</span>
-                    <span className="font-medium">Out Station Management</span>
+                    <span className="font-medium">TADA Management</span>
                   </Link>
                   
                   <Link 
@@ -343,7 +381,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">🚗</span>
-                  <span className="font-medium">Out Station Expense</span>
+                  <span className="font-medium">TADA Expense</span>
                 </Link>
               )}
               
@@ -365,7 +403,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <span className="text-xl mr-3 group-hover:scale-110 transition-transform duration-300">🚗</span>
-                  <span className="font-medium">Out Station Management</span>
+                  <span className="font-medium">TADA Management</span>
                 </Link>
               )}
               

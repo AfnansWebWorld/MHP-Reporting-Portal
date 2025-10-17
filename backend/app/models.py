@@ -28,11 +28,14 @@ class User(Base):
     role = Column(Enum(Role), default=Role.user, nullable=False)
     is_active = Column(Boolean, default=True)
     submissions_count = Column(Integer, default=0)
-    has_outstation_access = Column(Boolean, default=False)  # Permission for Out Station Expense feature
+    has_outstation_access = Column(Boolean, default=False)  # Permission for TADA expense feature
     reports = relationship("Report", back_populates="user")
     visits = relationship("Visit", back_populates="user")
     clients = relationship("Client", back_populates="user")
     outstation_expenses = relationship("OutStationExpense", back_populates="user")
+    # Relationships for client assignments
+    assigned_clients = relationship("ClientAssignment", foreign_keys="ClientAssignment.junior_id")
+    owned_client_assignments = relationship("ClientAssignment", foreign_keys="ClientAssignment.manager_id")
 
 class Client(Base):
     __tablename__ = "clients"
@@ -152,3 +155,30 @@ class OutStationExpense(Base):
     user = relationship("User", back_populates="outstation_expenses")
     pdf_report_id = Column(Integer, ForeignKey("pdf_reports.id"), nullable=True)
     pdf_report = relationship("PDFReport")
+
+class ClientAssignment(Base):
+    __tablename__ = "client_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    client_id = Column(Integer, ForeignKey("clients.id"))
+    junior_id = Column(Integer, ForeignKey("users.id"))
+    manager_id = Column(Integer, ForeignKey("users.id"))
+    assigned_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True, nullable=True)
+    
+    client = relationship("Client", foreign_keys=[client_id])
+    junior = relationship("User", foreign_keys=[junior_id])
+    manager = relationship("User", foreign_keys=[manager_id])
+
+class ClientAccessLog(Base):
+    __tablename__ = "client_access_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    action_type = Column(String, nullable=False)  # view, create, update, delete, submit_report
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    details = Column(Text, nullable=True)  # Additional details about the action
+    
+    user = relationship("User")
+    client = relationship("Client")

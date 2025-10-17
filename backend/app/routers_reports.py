@@ -10,14 +10,37 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.post("/", response_model=schemas.ReportOut)
 def create_report(report_in: schemas.ReportCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    # Ensure the client belongs to the current user (unless admin)
+    # Ensure the client belongs to the current user or is assigned to them (unless admin)
     if user.role == models.Role.admin:
         client = db.query(models.Client).filter(models.Client.id == report_in.client_id).first()
     else:
+        # Check if client is directly owned by user
         client = db.query(models.Client).filter(
             models.Client.id == report_in.client_id,
             models.Client.user_id == user.id
         ).first()
+        
+        # If not directly owned, check if it's assigned to the user
+        if not client:
+            # Check if there's an active assignment for this client to this user
+            assignment = db.query(models.ClientAssignment).filter(
+                models.ClientAssignment.client_id == report_in.client_id,
+                models.ClientAssignment.junior_id == user.id,
+                models.ClientAssignment.is_active == True
+            ).first()
+            
+            if assignment:
+                # If assigned, get the client
+                client = db.query(models.Client).filter(models.Client.id == report_in.client_id).first()
+                
+                # Log this action as a proxy submission
+                log_entry = models.ClientAccessLog(
+                    user_id=user.id,
+                    client_id=report_in.client_id,
+                    action_type="proxy_submission",
+                    details=f"User submitted report on behalf of client owned by user {assignment.manager_id}"
+                )
+                db.add(log_entry)
     
     if not client:
         raise HTTPException(status_code=404, detail="Client not found or not accessible")

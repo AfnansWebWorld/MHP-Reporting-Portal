@@ -4,7 +4,7 @@ from sqlalchemy import func, and_, extract, cast, Date
 from typing import Optional, List
 from datetime import datetime, date, timedelta
 from . import models, schemas
-from .auth import require_admin
+from .auth import require_admin, get_current_user
 from .database import get_db
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -40,6 +40,172 @@ def get_users_list(db: Session = Depends(get_db), admin=Depends(require_admin)):
     """Get a simplified list of users for dropdown menus"""
     users = db.query(models.User.id, models.User.full_name).order_by(models.User.full_name).all()
     return [{"id": user.id, "name": user.full_name} for user in users]
+
+@router.get("/client-assignments", response_model=List[schemas.ClientAssignmentOut])
+def list_client_assignments(db: Session = Depends(get_db), admin=Depends(require_admin)):
+    """Admin endpoint to list all client assignments"""
+    from sqlalchemy.orm import joinedload
+    
+    assignments = db.query(models.ClientAssignment).options(
+        joinedload(models.ClientAssignment.client),
+        joinedload(models.ClientAssignment.junior),
+        joinedload(models.ClientAssignment.manager)
+    ).filter(models.ClientAssignment.is_active == True).all()
+    
+    return assignments
+
+@router.post("/client-assignments", response_model=schemas.ClientAssignmentOut)
+def create_client_assignment(
+    assignment: schemas.ClientAssignmentCreate, 
+    db: Session = Depends(get_db), 
+    admin=Depends(require_admin)
+):
+    """Admin endpoint to create a client assignment"""
+    # Verify the client exists
+    client = db.query(models.Client).filter(models.Client.id == assignment.client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    # Verify the users exist
+    assigned_to_user = db.query(models.User).filter(models.User.id == assignment.junior_id).first()
+    owner_user = db.query(models.User).filter(models.User.id == assignment.manager_id).first()
+    
+    if not assigned_to_user or not owner_user:
+        raise HTTPException(status_code=404, detail="One or both users not found")
+    
+    # Verify the client belongs to the owner user
+    if client.user_id != owner_user.id:
+        raise HTTPException(status_code=400, detail="Client does not belong to the specified owner user")
+    
+    # Check if an assignment already exists
+    existing_assignment = db.query(models.ClientAssignment).filter(
+        models.ClientAssignment.client_id == assignment.client_id,
+        models.ClientAssignment.junior_id == assignment.junior_id,
+        models.ClientAssignment.is_active == True
+    ).first()
+    
+    if existing_assignment:
+        raise HTTPException(status_code=400, detail="This client is already assigned to this user")
+    
+    # Prevent self-assignment (assigning to the owner)
+    if assignment.junior_id == assignment.manager_id:
+        raise HTTPException(status_code=400, detail="Cannot assign client to the owner user")
+    
+    # Create the assignment
+    new_assignment = models.ClientAssignment(
+        client_id=assignment.client_id,
+        junior_id=assignment.junior_id,
+        manager_id=assignment.manager_id,
+        is_active=True
+    )
+    
+    db.add(new_assignment)
+    db.commit()
+    db.refresh(new_assignment)
+    
+    # Log the assignment
+    log_entry = models.ClientAccessLog(
+        user_id=admin.id,
+        client_id=assignment.client_id,
+        action_type="assign",
+        details=f"Admin {admin.email} assigned client to user {assigned_to_user.email}"
+    )
+    db.add(log_entry)
+    db.commit()
+    
+    return new_assignment
+
+@router.post("/assign-user-clients")
+def assign_user_clients(
+    assignment_data: dict,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Admin endpoint to assign all clients from one user to another user"""
+    source_user_id = assignment_data.get("source_user_id")
+    target_user_id = assignment_data.get("target_user_id")
+    
+    if not source_user_id or not target_user_id:
+        raise HTTPException(status_code=400, detail="Both source_user_id and target_user_id are required")
+    # Verify both users exist
+    source_user = db.query(models.User).filter(models.User.id == source_user_id).first()
+    target_user = db.query(models.User).filter(models.User.id == target_user_id).first()
+    
+    if not source_user or not target_user:
+        raise HTTPException(status_code=404, detail="One or both users not found")
+    
+    # Prevent self-assignment
+    if source_user_id == target_user_id:
+        raise HTTPException(status_code=400, detail="Cannot assign clients to the same user")
+    
+    # Get all clients owned by the source user
+    source_clients = db.query(models.Client).filter(models.Client.user_id == source_user_id).all()
+    
+    if not source_clients:
+        return {"message": "No clients found for the source user", "assignments_created": 0}
+    
+    assignments_created = 0
+    
+    # Create assignments for each client
+    for client in source_clients:
+        # Check if an assignment already exists for this client and target user
+        existing_assignment = db.query(models.ClientAssignment).filter(
+            models.ClientAssignment.client_id == client.id,
+            models.ClientAssignment.junior_id == target_user_id,
+            models.ClientAssignment.is_active == True
+        ).first()
+        
+        if existing_assignment:
+            continue  # Skip if assignment already exists
+        
+        # Create the assignment
+        new_assignment = models.ClientAssignment(
+            client_id=client.id,
+            junior_id=target_user_id,
+            manager_id=source_user_id,  # The source user is the manager/owner
+            is_active=True
+        )
+        
+        db.add(new_assignment)
+        assignments_created += 1
+        
+        # Log the assignment
+        log_entry = models.ClientAccessLog(
+            user_id=admin.id,
+            client_id=client.id,
+            action_type="assign",
+            details=f"Admin {admin.email} assigned client from {source_user.email} to {target_user.email}"
+        )
+        db.add(log_entry)
+    
+    db.commit()
+    
+    return {
+        "message": f"Successfully assigned {assignments_created} clients from {source_user.full_name or source_user.email} to {target_user.full_name or target_user.email}",
+        "assignments_created": assignments_created
+    }
+
+@router.delete("/client-assignments/{assignment_id}")
+def delete_client_assignment(assignment_id: int, db: Session = Depends(get_db), admin=Depends(require_admin)):
+    """Admin endpoint to delete a client assignment"""
+    assignment = db.query(models.ClientAssignment).filter(models.ClientAssignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    # Soft delete by setting is_active to False
+    assignment.is_active = False
+    
+    # Log the deletion
+    log_entry = models.ClientAccessLog(
+        user_id=admin.id,
+        client_id=assignment.client_id,
+        action_type="unassign",
+        details=f"Admin {admin.email} removed client assignment"
+    )
+    db.add(log_entry)
+    
+    db.commit()
+    return {"message": "Assignment removed successfully"}
 
 @router.get("/users/{user_id}/reports", response_model=list[schemas.ReportOut])
 def list_user_reports(user_id: int, db: Session = Depends(get_db), admin=Depends(require_admin)):
