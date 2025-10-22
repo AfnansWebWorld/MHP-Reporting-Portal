@@ -125,9 +125,33 @@ def get_password_hash(password):
             logger.warning(f"Password is {len(password_bytes)} bytes, truncating to 72 bytes for bcrypt")
             password_bytes = password_bytes[:72]
             password_str = password_bytes.decode('utf-8', errors='ignore')
+            password_bytes = password_str.encode('utf-8')
+
+        # Prefer native bcrypt implementation for stability
+        try:
+            import bcrypt
+
+            # Use consistent rounds across hash/verify
+            salt = bcrypt.gensalt(rounds=12)
+            hashed_bytes = bcrypt.hashpw(password_bytes, salt)
+            hashed_str = hashed_bytes.decode('utf-8')
+            logger.info(
+                "Password hashed successfully with bcrypt (length: %s chars, %s bytes)",
+                len(password_str),
+                len(password_bytes)
+            )
+            return hashed_str
+        except ImportError:
+            logger.warning("bcrypt module not available, falling back to passlib context")
+        except Exception as bcrypt_error:
+            logger.error(f"Native bcrypt hashing failed: {bcrypt_error}. Falling back to passlib context.")
         
         hashed = pwd_context.hash(password_str)
-        logger.info(f"Password hashed successfully (length: {len(password_str)} chars, {len(password_bytes)} bytes)")
+        logger.info(
+            "Password hashed successfully with passlib (length: %s chars, %s bytes)",
+            len(password_str),
+            len(password_bytes)
+        )
         return hashed
     except ValueError as e:
         # Re-raise ValueError as-is
