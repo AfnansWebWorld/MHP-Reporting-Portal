@@ -105,19 +105,34 @@ def verify_password(plain_password: Union[str, bytes], hashed_password: str) -> 
 
 
 def get_password_hash(password):
-    """Hash a password using bcrypt"""
+    """Hash a password using bcrypt (max 72 bytes)"""
     try:
         if not password:
             raise ValueError("Password cannot be empty")
+        
         # Ensure password is a string
         if isinstance(password, bytes):
             password = password.decode('utf-8')
+        
         password_str = str(password).strip()
+        
         if not password_str:
             raise ValueError("Password cannot be empty after stripping whitespace")
+        
+        # Bcrypt has a 72-byte limit, truncate if necessary
+        password_bytes = password_str.encode('utf-8')
+        if len(password_bytes) > 72:
+            logger.warning(f"Password is {len(password_bytes)} bytes, truncating to 72 bytes for bcrypt")
+            password_bytes = password_bytes[:72]
+            password_str = password_bytes.decode('utf-8', errors='ignore')
+        
         hashed = pwd_context.hash(password_str)
-        logger.info(f"Password hashed successfully (length: {len(password_str)})")
+        logger.info(f"Password hashed successfully (length: {len(password_str)} chars, {len(password_bytes)} bytes)")
         return hashed
+    except ValueError as e:
+        # Re-raise ValueError as-is
+        logger.error(f"Password validation failed: {e}")
+        raise
     except Exception as e:
         logger.error(f"Password hashing failed: {e}")
         raise ValueError(f"Failed to hash password: {str(e)}")

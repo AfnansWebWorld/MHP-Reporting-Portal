@@ -64,6 +64,13 @@ export default function Admin() {
       return
     }
 
+    // Validate password length (bcrypt has 72 byte limit)
+    const passwordBytes = new TextEncoder().encode(password).length
+    if (passwordBytes > 72) {
+      setMessage(`Password is too long (${passwordBytes} bytes). Maximum is 72 bytes. Please use a shorter password.`)
+      return
+    }
+
     try {
       await api.post('/auth/create-user', {
         email,
@@ -118,7 +125,16 @@ export default function Admin() {
       
       // Only include password if it's not empty
       if (editUserPassword && editUserPassword.trim().length > 0) {
-        updateData.password = editUserPassword.trim()
+        const trimmedPassword = editUserPassword.trim()
+        
+        // Validate password length (bcrypt has 72 byte limit)
+        const passwordBytes = new TextEncoder().encode(trimmedPassword).length
+        if (passwordBytes > 72) {
+          setUserMessage(`Password is too long (${passwordBytes} bytes). Maximum is 72 bytes. Please use a shorter password.`)
+          return
+        }
+        
+        updateData.password = trimmedPassword
         console.log('Updating user with new password')
       } else {
         console.log('Updating user without changing password')
@@ -250,8 +266,9 @@ export default function Admin() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
               <input 
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
-                placeholder="Enter password" 
+                placeholder="Enter password (max 72 characters)" 
                 type="password" 
+                maxLength={72}
                 value={password} 
                 onChange={(e)=>setPassword(e.target.value)} 
               />
@@ -449,8 +466,9 @@ export default function Admin() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">New Password (optional)</label>
                       <input
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                        placeholder="Leave blank to keep current password"
+                        placeholder="Leave blank to keep current (max 72 chars)"
                         type="password"
+                        maxLength={72}
                         value={editUserPassword}
                         onChange={(e) => setEditUserPassword(e.target.value)}
                       />
