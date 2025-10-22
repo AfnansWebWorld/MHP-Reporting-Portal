@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
 from . import models
@@ -9,16 +10,47 @@ from .routers_reports import router as reports_router
 
 app = FastAPI(title="MHP Reporting Portal API")
 
+# Get allowed origins from environment or use defaults
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://mhp-reporting-portal.up.railway.app",
     "https://backend-service-production-1daa.up.railway.app",
     "https://frontend-service-production-1daa.up.railway.app",
-    "https://*.railway.app",
-    "*",  # Allow all origins for debugging
 ]
 
+# Add environment-specified origins
+if allowed_origins_env:
+    origins.extend([origin.strip() for origin in allowed_origins_env.split(",")])
+
+# For Railway deployment, allow all Railway domains
+origins.extend([
+    "https://*.railway.app",
+])
+
+print(f"CORS allowed origins: {origins}")
+
+# Custom CORS middleware to handle Railway wildcard domains
+@app.middleware("http")
+async def custom_cors_middleware(request: Request, call_next):
+    origin = request.headers.get("origin")
+    response = await call_next(request)
+    
+    # Allow Railway domains
+    if origin and (origin.endswith(".railway.app") or 
+                   origin in origins or 
+                   origin.startswith("http://localhost") or
+                   origin.startswith("http://127.0.0.1")):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+    
+    return response
+
+# Standard CORS middleware as fallback
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -71,3 +103,29 @@ app.include_router(client_assignments_router)
 @app.get("/")
 def root():
     return {"status": "ok", "service": "MHP Reporting Portal API"}
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "MHP Reporting Portal API",
+        "cors_origins": origins[:5]  # Show first 5 origins for debugging
+    }
+
+# Handle OPTIONS requests for CORS preflight
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(request: Request, rest_of_path: str):
+    origin = request.headers.get("origin")
+    response = Response()
+    
+    if origin and (origin.endswith(".railway.app") or 
+                   origin in origins or 
+                   origin.startswith("http://localhost") or
+                   origin.startswith("http://127.0.0.1")):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Max-Age"] = "600"
+    
+    return response
