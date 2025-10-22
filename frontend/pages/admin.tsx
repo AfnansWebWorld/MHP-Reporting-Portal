@@ -116,18 +116,31 @@ export default function Admin() {
         designation: editUserDesignation
       }
       
-      if (editUserPassword) {
-        updateData.password = editUserPassword
+      // Only include password if it's not empty
+      if (editUserPassword && editUserPassword.trim().length > 0) {
+        updateData.password = editUserPassword.trim()
+        console.log('Updating user with new password')
+      } else {
+        console.log('Updating user without changing password')
       }
 
-      await api.put(`/auth/users/${editingUser.id}`, updateData)
+      console.log('Update payload:', { ...updateData, password: updateData.password ? '***' : undefined })
+
+      const response = await api.put(`/auth/users/${editingUser.id}`, updateData)
+      console.log('Update response:', response.data)
+      
       setUserMessage('User updated successfully!')
       
       // Reload users
       const res = await api.get('/admin/stats')
       setUsers(res.data.users)
-      cancelEditUser()
+      
+      // Wait a bit before closing to show success message
+      setTimeout(() => {
+        cancelEditUser()
+      }, 1500)
     } catch (e: any) {
+      console.error('Update error:', e.response?.data || e.message)
       setUserMessage(e.response?.data?.detail || 'Error updating user')
     }
   }

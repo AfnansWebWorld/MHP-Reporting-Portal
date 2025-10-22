@@ -13,6 +13,16 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  
+  // Log request for debugging (only in development)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('API Request:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      data: config.data ? { ...config.data, password: config.data.password ? '***' : undefined } : undefined
+    })
+  }
+  
   return config
 })
 

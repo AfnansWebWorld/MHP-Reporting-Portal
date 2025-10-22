@@ -168,9 +168,14 @@ def me(current_user: models.User = Depends(get_current_user)):
 @router.put("/users/{user_id}", response_model=schemas.UserOut)
 def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Depends(get_db), admin=Depends(require_admin)):
     """Update user details - admin only"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    logger.info(f"Updating user {user_id}: email={user_update.email}, name={user_update.full_name}, designation={user_update.designation}, password={'***' if user_update.password else 'None'}")
     
     # Check if email is being changed and if it conflicts
     if user_update.email and user_update.email != user.email:
@@ -186,11 +191,22 @@ def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Dep
     if user_update.designation is not None:
         user.designation = user_update.designation
     
-    if user_update.password:
+    # Update password if provided and not empty
+    if user_update.password and len(user_update.password.strip()) > 0:
+        logger.info(f"Updating password for user {user_id}")
         user.hashed_password = get_password_hash(user_update.password)
+    else:
+        logger.info(f"Password not updated for user {user_id} (empty or None)")
     
-    db.commit()
-    db.refresh(user)
+    try:
+        db.commit()
+        db.refresh(user)
+        logger.info(f"User {user_id} updated successfully")
+    except Exception as e:
+        logger.error(f"Error committing user update: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    
     return user
 
 @router.delete("/users/{user_id}")

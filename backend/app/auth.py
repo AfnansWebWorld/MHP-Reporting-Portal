@@ -105,7 +105,22 @@ def verify_password(plain_password: Union[str, bytes], hashed_password: str) -> 
 
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    """Hash a password using bcrypt"""
+    try:
+        if not password:
+            raise ValueError("Password cannot be empty")
+        # Ensure password is a string
+        if isinstance(password, bytes):
+            password = password.decode('utf-8')
+        password_str = str(password).strip()
+        if not password_str:
+            raise ValueError("Password cannot be empty after stripping whitespace")
+        hashed = pwd_context.hash(password_str)
+        logger.info(f"Password hashed successfully (length: {len(password_str)})")
+        return hashed
+    except Exception as e:
+        logger.error(f"Password hashing failed: {e}")
+        raise ValueError(f"Failed to hash password: {str(e)}")
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
